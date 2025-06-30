@@ -1,0 +1,19 @@
+﻿using Compliance_Repository.User;
+using Microsoft.Extensions.DependencyInjection;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace Compliance_Repository
+{
+    public static class Register
+    {
+        public static void RegisterTypes(IServiceCollection services)
+        {
+            services.AddScoped<IUserRepository, UserRepository>();
+
+        }
+    }
+}
