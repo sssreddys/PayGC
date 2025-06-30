@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Compliance_Dtos\Compliance_Dtos.csproj" />
+    <ProjectReference Include="..\Compliance_models\Compliance_models.csproj" />
+    <ProjectReference Include="..\Compliance_Repository\Compliance_Repository.csproj" />
+    <ProjectReference Include="..\Compliance_Services\Compliance_Services.csproj" />
+  </ItemGroup>
+
+</Project>

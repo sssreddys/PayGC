@@ -1,0 +1,6 @@
+@PayGCompliance_HostAddress = http://localhost:5028
+
+GET {{PayGCompliance_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
