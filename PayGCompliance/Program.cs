@@ -6,6 +6,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔐 JWT Authentication Setup
@@ -59,7 +60,6 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
-
 var app = builder.Build();
 
 // 🔐 Enable Swagger UI
@@ -70,6 +70,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// 🛡️ Custom Middleware for Error Handling
 
 // 🔐 Enable Authentication & Authorization
 app.UseAuthentication();  // <<< Missing in your original code!
