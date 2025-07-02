@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
-namespace Compliance_Dtos
+namespace Compliance_Dtos.Auth
 {
     public class RegisterUserDto
     {

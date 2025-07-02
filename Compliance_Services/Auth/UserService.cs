@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.Auth;
 using Compliance_Repository.User;
 using Microsoft.AspNetCore.Identity;
 
@@ -27,6 +27,20 @@ namespace Compliance_Services.User
 
             return userId;
         }
+
+        public async Task<AuthUserDto?> GetUserByLoginInputAsync(string loginInput)
+        {
+            return await _repo.GetUserByLoginInputAsync(loginInput);
+        }
+
+        public async Task<UserProfileDto?> GetProfileAsync(string userId)
+        {
+            return await _repo.GetUserProfileByIdAsync(userId);
+        }
+
+
     }
+
+
 }
 
