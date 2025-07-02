@@ -1,109 +1,44 @@
 ﻿using Compliance_Dtos;
-using Compliance_models.User;
-using Dapper;
-using System;
-using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
 using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace Compliance_Repository.User
 {
-    public sealed class UserRepository : IUserRepository
+    public class UserRepository : IUserRepository
     {
-        private readonly string _conn;
+        private readonly IConfiguration _configuration;
 
-        public UserRepository(string connectionString)
+        public UserRepository(IConfiguration configuration)
         {
-            _conn = connectionString;
-        }
-        public async Task<int> RegisterUserAsync(RegisterUser user)
-        {
-            using var db = new SqlConnection(_conn);
-            var p = new DynamicParameters();
-
-            // Input params
-            p.Add("@FirstName", user.FirstName);
-            p.Add("@LastName", user.LastName);
-            p.Add("@PhoneNumber", user.PhoneNumber);
-            p.Add("@Email", user.Email);
-            p.Add("@Designation", user.Designation);
-            p.Add("@Location", user.Location);
-            p.Add("@Description", user.Description);
-            p.Add("@PasswordHash", user.Password);
-            p.Add("@Status", user.Status);
-            p.Add("@RoleId", user.RoleId);
-            // Capture return value
-            p.Add("returnValue", dbType: DbType.Int32, direction: ParameterDirection.ReturnValue);
-
-            await db.ExecuteAsync(
-                "dbo.sp_RegisterUser",
-                p,
-                commandType: CommandType.StoredProcedure
-            );
-
-            int result = p.Get<int>("returnValue");
-            return result;
+            _configuration = configuration;
         }
 
-
-
-
-        public async Task<(int Status, string ErrorMessage, UserDto? User)> LoginUserAsync(string identifier, string passwordHash)
+        public async Task<string> RegisterUserAsync(RegisterUserDto dto, byte[]? profileImageBytes)
         {
-            using var db = new SqlConnection(_conn);
-            var p = new DynamicParameters();
-
-            // Input parameters
-            p.Add("@Identifier", identifier);
-            p.Add("@PasswordHash", passwordHash);
-
-            // Output parameters
-            p.Add("@UserId", dbType: DbType.Int32, direction: ParameterDirection.Output);
-            p.Add("@FirstName", dbType: DbType.String, size: 50, direction: ParameterDirection.Output);
-            p.Add("@LastName", dbType: DbType.String, size: 50, direction: ParameterDirection.Output);
-            p.Add("@Email", dbType: DbType.String, size: 255, direction: ParameterDirection.Output);
-            p.Add("@PhoneNumber", dbType: DbType.String, size: 15, direction: ParameterDirection.Output); // Added PhoneNumber
-            p.Add("@Status", dbType: DbType.Int32, direction: ParameterDirection.Output);
-            p.Add("@ErrorMessage", dbType: DbType.String, size: 255, direction: ParameterDirection.Output);
-
-            await db.ExecuteAsync("dbo.sp_LoginUser", p, commandType: CommandType.StoredProcedure);
-
-            int status = p.Get<int>("@Status");
-            string errorMessage = p.Get<string>("@ErrorMessage");
-
-            if (status == 1)
+            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            using var command = new SqlCommand("sp_register_user", connection)
             {
-                return (
-                    Status: status,
-                    ErrorMessage: errorMessage,
-                    User: new UserDto
-                    {
-                        Id = p.Get<int>("@UserId"),
-                        FirstName = p.Get<string>("@FirstName"),
-                        LastName = p.Get<string>("@LastName"),
-                        Email = p.Get<string>("@Email"),
-                        PhoneNumber = p.Get<string>("@PhoneNumber"), // Retrieve PhoneNumber
-                    }
-                );
-            }
+                CommandType = CommandType.StoredProcedure
+            };
 
-            return (Status: status, ErrorMessage: errorMessage, User: null);
-        }
-
-
-        public async Task<bool> SoftDeleteUserAsync(int userId)
-        {
-            using var db = new SqlConnection(_conn);
-            var affected = await db.ExecuteAsync(
-                "UPDATE dbo.user_profile " +
-                "SET status = 0, updated_at = GETDATE() " +
-                "WHERE Id = @Id",
-                new { Id = userId }
-            );
-            return affected > 0;
+            command.Parameters.AddWithValue("@first_name", dto.FirstName);
+            command.Parameters.AddWithValue("@last_name", dto.LastName);
+            command.Parameters.AddWithValue("@email", dto.Email);
+            command.Parameters.AddWithValue("@phone_number", dto.PhoneNumber);
+            command.Parameters.AddWithValue("@designation", dto.Designation);
+            command.Parameters.AddWithValue("@location", (object?)dto.Location ?? DBNull.Value);
+            command.Parameters.AddWithValue("@description", (object?)dto.Description ?? DBNull.Value);
+            command.Parameters.AddWithValue("@password_hash", dto.PasswordHash);
+            command.Parameters.AddWithValue("@role_id", dto.RoleId);
+            command.Parameters.AddWithValue("@gender", dto.Gender);
+            command.Parameters.AddWithValue("@added_by", (object?)dto.AddedBy ?? DBNull.Value);
+            command.Parameters.AddWithValue("@profile_image", (object?)profileImageBytes ?? DBNull.Value);
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync(); // Assuming SP returns user ID as string
+            return result?.ToString() ?? "";
         }
     }
+
+
+
 }

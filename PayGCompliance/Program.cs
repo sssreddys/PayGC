@@ -1,4 +1,5 @@
 using Compliance_Repository.User;
+using Compliance_Services.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
@@ -24,10 +25,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 
-builder.Services.AddScoped<IUserRepository>(_ => new UserRepository(conn));
-// Call the RegisterTypes method to register your custom services
-Compliance_Services.Register.RegisterTypes(builder.Services);
-
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
 // Add services to the container.
 
 builder.Services.AddControllers();
