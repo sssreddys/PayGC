@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Compliance_Services
 {
-    public static class Register
+    public static class RegisterAllServices
     {
         public static void RegisterTypes(IServiceCollection services)
         {

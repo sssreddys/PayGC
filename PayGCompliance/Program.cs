@@ -34,8 +34,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // 🧱 Dependency Injection
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
+
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 
@@ -53,8 +52,8 @@ SqlMapper.SetTypeMap(
 
 
 // Call the RegisterTypes method to register your custom services
-Compliance_Services.Register.RegisterTypes(builder.Services);
-Compliance_Repository.Register.RegisterTypes(builder.Services);
+Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
+Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 
 // Add services to the container.
 
