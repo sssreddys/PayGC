@@ -1,4 +1,6 @@
-﻿using Compliance_Repository.User;
+﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Repository.User;
+using Compliance_Services.AuditedFincancial;
 using Compliance_Services.JWT;
 using Compliance_Services.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -30,6 +32,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
+builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
 
 builder.Services.AddControllers();
 
