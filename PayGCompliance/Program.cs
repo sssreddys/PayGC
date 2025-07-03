@@ -1,5 +1,7 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Dtos;
 using Compliance_Repository.User;
+using Compliance_Services.AuditedFincancial;
 using Compliance_Services.JWT;
 using Compliance_Services.User;
 using Dapper;
@@ -37,6 +39,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
+builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
 
 
 
