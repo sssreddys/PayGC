@@ -1,5 +1,6 @@
 ﻿using Compliance_Dtos;
 using Dapper;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -14,9 +15,10 @@ namespace Compliance_Repository.Regulator
     {
         private readonly string _conn;
 
-        public RegulatorRepository(string connectionString) { 
-        
-            _conn = connectionString;
+        public RegulatorRepository(IConfiguration configuration)
+        {
+            _conn = configuration.GetConnectionString("DefaultConnection")
+                ?? throw new ArgumentNullException("DefaultConnection");
         }
 
         public async Task<IEnumerable<RegulatorDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
