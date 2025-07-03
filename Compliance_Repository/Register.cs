@@ -1,4 +1,5 @@
-﻿using Compliance_Repository.User;
+﻿using Compliance_Repository.Regulator;
+using Compliance_Repository.User;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace Compliance_Repository
         public static void RegisterTypes(IServiceCollection services)
         {
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IRegulatorRepository, RegulatorRepository>();
 
         }
     }

@@ -6,7 +6,11 @@ using System.Threading.Tasks;
 
 namespace Compliance_models.User
 {
-    internal class Role
+    public class Role
     {
+        public int Id { get; set; }
+        public string name { get; set; }
+
     }
 }
+    

@@ -1,4 +1,5 @@
-﻿using Compliance_Services.Users;
+﻿using Compliance_Services.Regulator;
+using Compliance_Services.Users;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -13,6 +14,7 @@ namespace Compliance_Services
         public static void RegisterTypes(IServiceCollection services)
         {
             services.AddScoped<IUsersService, UsersService>();
+            services.AddScoped<RegulatorService>();
         }
     }
 
