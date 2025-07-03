@@ -1,17 +1,21 @@
-using Compliance_Dtos;
+﻿using Compliance_Dtos;
 using Compliance_Repository.User;
+using Compliance_Services.JWT;
+using Compliance_Services.User;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using System.Text;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
+// 🔐 JWT Authentication Setup
 var conn = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddSingleton(conn);
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-
     .AddJwtBearer(opts =>
     {
         opts.TokenValidationParameters = new TokenValidationParameters
@@ -27,6 +31,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// 🧱 Dependency Injection
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 SqlMapper.SetTypeMap(
     typeof(RegulatorDto),
@@ -44,16 +52,36 @@ builder.Services.AddScoped<IUserRepository>(_ => new UserRepository(conn));
 Compliance_Services.Register.RegisterTypes(builder.Services);
 Compliance_Repository.Register.RegisterTypes(builder.Services);
 
-// Add services to the container.
-
-builder.Services.AddControllers();
-// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+// ✅ Add Swagger with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "PayGCompliance API", Version = "v1" });
 
+    // ✅ Add JWT Bearer token UI support
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: `Bearer {token}`",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// 🔐 Enable Swagger UI
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -62,6 +90,10 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// 🛡️ Custom Middleware for Error Handling
+
+// 🔐 Enable Authentication & Authorization
+app.UseAuthentication();  // <<< Missing in your original code!
 app.UseAuthorization();
 
 app.MapControllers();
