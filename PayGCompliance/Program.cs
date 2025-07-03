@@ -2,6 +2,7 @@
 using Compliance_Services.JWT;
 using Compliance_Services.User;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -10,6 +11,10 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔐 JWT Authentication Setup
+var conn = builder.Configuration.GetConnectionString("DefaultConnection")
+           ?? throw new InvalidOperationException("Connection string 'DefaultConnection' is missing.");
+
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>
     {
@@ -30,6 +35,28 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+
+
+SqlMapper.SetTypeMap(
+    typeof(RegulatorDto),
+    new CustomPropertyTypeMap(
+        typeof(RegulatorDto),
+        (type, columnName) => type.GetProperties()
+            .FirstOrDefault(prop =>
+                prop.Name.Equals(columnName.Replace("_", ""), StringComparison.OrdinalIgnoreCase)
+            )
+    )
+);
+
+
+// Call the RegisterTypes method to register your custom services
+Compliance_Services.Register.RegisterTypes(builder.Services);
+Compliance_Repository.Register.RegisterTypes(builder.Services);
+
+// Add services to the container.
+
+
 
 builder.Services.AddControllers();
 

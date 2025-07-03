@@ -1,7 +1,7 @@
 ﻿using Compliance_Dtos;
 using Compliance_Services.Regulator;
 using Microsoft.AspNetCore.Mvc;
-using PayGCompliance.ApiResponse;
+using PayGCompliance.Common;
 
 namespace PayGCompliance.Controllers
 {
