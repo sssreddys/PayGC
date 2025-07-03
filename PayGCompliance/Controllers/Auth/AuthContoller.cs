@@ -12,7 +12,6 @@ namespace PayGCompliance.Controllers.Auth
     public class AuthController : ControllerBase
     {
         private readonly IUserService _service;
-
         private readonly IJwtTokenService _jwtTokenService;
         private readonly PasswordHasher<object> _hasher;
 
@@ -22,7 +21,6 @@ namespace PayGCompliance.Controllers.Auth
             _jwtTokenService = jwtTokenService;
             _hasher = new PasswordHasher<object>();
         }
-
 
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
@@ -39,15 +37,14 @@ namespace PayGCompliance.Controllers.Auth
 
             try
             {
-                // Convert the uploaded file to byte array
                 byte[]? profileImageBytes = null;
                 if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
                 {
-                    // ✅ Size Check (500KB max)
                     if (dto.ProfileImage.Length > 500 * 1024)
                     {
                         return BadRequest(ApiResponse<object>.ErrorResponse("Image size must not exceed 500 KB"));
                     }
+
                     using var ms = new MemoryStream();
                     await dto.ProfileImage.CopyToAsync(ms);
                     profileImageBytes = ms.ToArray();
@@ -58,6 +55,7 @@ namespace PayGCompliance.Controllers.Auth
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Exception in Register: {ex.Message}");
                 return StatusCode(500, ApiResponse<object>.ErrorResponse("Registration failed: " + ex.Message));
             }
         }
@@ -82,14 +80,12 @@ namespace PayGCompliance.Controllers.Auth
                     return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid login credentials"));
                 }
 
-                // ✅ Verify password
                 var result = _hasher.VerifyHashedPassword(null, user.PasswordHash, dto.Password);
                 if (result != PasswordVerificationResult.Success)
                 {
                     return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid password"));
                 }
 
-                // ✅ Generate token
                 var token = _jwtTokenService.GenerateToken(user);
 
                 var response = new
@@ -105,12 +101,9 @@ namespace PayGCompliance.Controllers.Auth
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"Exception in Login: {ex.Message}");
                 return StatusCode(500, ApiResponse<object>.ErrorResponse("Login failed: " + ex.Message));
             }
         }
-
-
-
     }
-
 }
