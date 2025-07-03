@@ -1,6 +1,8 @@
-﻿using Compliance_Repository.User;
+﻿using Compliance_Dtos;
+using Compliance_Repository.User;
 using Compliance_Services.JWT;
 using Compliance_Services.User;
+using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -10,6 +12,9 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 // 🔐 JWT Authentication Setup
+var conn = builder.Configuration.GetConnectionString("DefaultConnection");
+builder.Services.AddSingleton(conn);
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(opts =>
     {
@@ -31,7 +36,21 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
-builder.Services.AddControllers();
+SqlMapper.SetTypeMap(
+    typeof(RegulatorDto),
+    new CustomPropertyTypeMap(
+        typeof(RegulatorDto),
+        (type, columnName) => type.GetProperties()
+            .FirstOrDefault(prop =>
+                prop.Name.Equals(columnName.Replace("_", ""), StringComparison.OrdinalIgnoreCase)
+            )
+    )
+);
+
+builder.Services.AddScoped<IUserRepository>(_ => new UserRepository(conn));
+// Call the RegisterTypes method to register your custom services
+Compliance_Services.Register.RegisterTypes(builder.Services);
+Compliance_Repository.Register.RegisterTypes(builder.Services);
 
 // ✅ Add Swagger with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
