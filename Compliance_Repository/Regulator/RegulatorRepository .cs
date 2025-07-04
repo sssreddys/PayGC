@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.Regulator;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -26,7 +26,7 @@ namespace Compliance_Repository.Regulator
             using var db = new SqlConnection(_conn);
 
             return await db.QueryAsync<RegulatorDto>(
-                "sp_GetAllRegulators",
+                "sp_get_all_regulators",
                 new
                 {
                     PageNumber = pageNumber,
@@ -42,7 +42,7 @@ namespace Compliance_Repository.Regulator
         {
             using var db = new SqlConnection(_conn);
             return await db.QuerySingleOrDefaultAsync<RegulatorDto>(
-                "sp_GetRegulatorById",
+                "sp_get_regulator_by_id",
                 new { Id = id },
                 commandType: CommandType.StoredProcedure
             );
@@ -55,7 +55,7 @@ namespace Compliance_Repository.Regulator
 
             // Insert and get the newly inserted ID
             var id = await db.ExecuteScalarAsync<int>(
-                "sp_AddRegulator",
+                "sp_add_regulator",
                 new
                 {
                     regulator.Name,
@@ -63,7 +63,9 @@ namespace Compliance_Repository.Regulator
                     regulator.ContactPerson,
                     regulator.MobileNumber,
                     regulator.Email,
-                    regulator.ContactAddress
+                    regulator.ContactAddress,
+                    regulator.Status,
+                    regulator.CreatedBy
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -88,7 +90,7 @@ namespace Compliance_Repository.Regulator
             using var db = new SqlConnection(_conn);
 
             var resultCode = await db.ExecuteScalarAsync<int>(
-                "sp_UpdateRegulator",
+                "sp_update_regulator",
                 new
                 {
                     regulator.Id,
@@ -97,7 +99,9 @@ namespace Compliance_Repository.Regulator
                     regulator.ContactPerson,
                     regulator.MobileNumber,
                     regulator.Email,
-                    regulator.ContactAddress
+                    regulator.Status,
+                    regulator.ContactAddress,
+                    PerformedBy = regulator.CreatedBy
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -117,16 +121,24 @@ namespace Compliance_Repository.Regulator
         }
 
 
-        public async Task<bool> DeleteAsync(int id)
+        public async Task<bool> DeleteAsync(int id, string performedBy)
         {
             using var db = new SqlConnection(_conn);
-            var rowsAffected = await db.ExecuteAsync(
-                "sp_DeleteRegulator",
-                new { Id = id },
+
+            var result = await db.ExecuteScalarAsync<int>(
+                "sp_delete_regulator",
+                new { Id = id, PerformedBy = performedBy },
                 commandType: CommandType.StoredProcedure
             );
-            return rowsAffected > 0;
+
+            if (result == -1)
+                throw new Exception("Regulator not found.");
+            if (result == -2)
+                throw new Exception("Regulator is already inactive.");
+
+            return result == 1;
         }
+
 
     }
 }
