@@ -1,9 +1,10 @@
-﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Dtos;
+﻿using Compliance_Dtos;
+using Compliance_Dtos.AuditedFinancial;
 using Compliance_Repository.User;
 using Compliance_Services.AuditedFincancial;
 using Compliance_Services.JWT;
 using Compliance_Services.User;
+using Compliance_Services.VolumesValues;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,6 +41,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
 builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
+builder.Services.AddScoped<IVolumesValuesRepository, VolumesValuesRepository>();
+builder.Services.AddScoped<IVolumesValuesService, VolumesValuesService>();
+
 
 
 
