@@ -1,5 +1,7 @@
-﻿using Compliance_Services.Regulator;
+﻿using Compliance_Services.JWT;
+using Compliance_Services.Regulator;
 using Compliance_Services.User;
+using Compliance_Services.AuditedFincancial;
 using Microsoft.Extensions.DependencyInjection;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,8 @@ namespace Compliance_Services
         {
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<RegulatorService>();
+            services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
+            services.AddScoped<IJwtTokenService ,JwtTokenService>();
         }
     }
 

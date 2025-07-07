@@ -1,9 +1,9 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.Regulator;
 using Compliance_Services.Regulator;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
 
-namespace PayGCompliance.Controllers
+namespace PayGCompliance.Controllers.Regulator
 {
     [ApiController]
     [Route("api/regulators")]
@@ -115,27 +115,40 @@ namespace PayGCompliance.Controllers
         }
 
 
-
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
         {
-            var deleted = await _service.DeleteAsync(id);
-            if (!deleted)
+            try
             {
-                return NotFound(new ApiResponse<object>
+                var result = await _service.DeleteAsync(id, performedBy);
+
+                if (!result)
                 {
-                    Success = false,
-                    Message = "Regulator id not found.",
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "Regulator not found or could not be deleted.",
+                        Data = null
+                    });
+                }
+
+                return Ok(new ApiResponse<object>
+                {
+                    Success = true,
+                    Message = "Regulator deleted successfully.",
                     Data = null
                 });
             }
-
-            return Ok(new ApiResponse<object>
+            catch (Exception ex)
             {
-                Success = true,
-                Message = "Regulator deleted successfully.",
-                Data = null
-            });
+                return BadRequest(new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = ex.Message,
+                    Data = null
+                });
+            }
         }
+
     }
 }
