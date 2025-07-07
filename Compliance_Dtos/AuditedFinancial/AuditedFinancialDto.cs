@@ -13,7 +13,7 @@ namespace Compliance_Dtos.AuditedFinancial
         public string DocumentType { get; set; }
         public string Period { get; set; }
         public string FinancialYear { get; set; }
-        public string AttachedDocument { get; set; }
+        public byte[]? AttachedDocument { get; set; }
         public string AuditedBy { get; set; }
         public string ReviewedBy { get; set; }
         public DateTime? ReviewedDate { get; set; }

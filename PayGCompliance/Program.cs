@@ -38,8 +38,8 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 // 🧱 Dependency Injection
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
-builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
+//builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
+//builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
 
 
 

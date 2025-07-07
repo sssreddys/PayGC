@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Compliance_Services.AuditedFincancial
 {
@@ -16,13 +17,13 @@ namespace Compliance_Services.AuditedFincancial
             _repository = repository;
         }
 
-        public Task<int> CreateAsync(CreateAuditedFinancialDto dto) => _repository.CreateAsync(dto);
-        public Task<IEnumerable<AuditedFinancialDto>> GetAllAsync() => _repository.GetAllAsync();
+        public Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes) => _repository.CreateAsync(dto, documentBytes);
         public Task<AuditedFinancialDto> GetByIdAsync(int id) => _repository.GetByIdAsync(id);
-        public Task<bool> UpdateAsync(int id, UpdateAuditedFinancialDto dto) => _repository.UpdateAsync(id, dto);
-        public Task<bool> DeleteAsync(int id) => _repository.DeleteAsync(id);
-        public Task<PagedResultDto<AuditedFinancialDto>> GetPagedAsync(string search, string status, int page, int pageSize) => _repository.GetPagedAsync(search, status, page, pageSize);
-        public Task<IEnumerable<string>> GetStatusesAsync() => _repository.GetStatusesAsync();
+        public Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy) => _repository.UpdateAsync( documentBytes, dto, updatedBy);
+        public Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy) => _repository.DeleteAsync(dto, updatedBy);
+        public Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
+        => _repository.GetPagedAsync(search, status, page, pageSize, fromDate, toDate);
+      
     }
 
 }

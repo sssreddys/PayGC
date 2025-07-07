@@ -9,12 +9,11 @@ namespace Compliance_Services.AuditedFincancial
 {
     public interface IAuditedFinancialService
     {
-        Task<int> CreateAsync(CreateAuditedFinancialDto dto);
-        Task<IEnumerable<AuditedFinancialDto>> GetAllAsync();
+        Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes);
         Task<AuditedFinancialDto> GetByIdAsync(int id);
-        Task<bool> UpdateAsync(int id, UpdateAuditedFinancialDto dto);
-        Task<bool> DeleteAsync(int id);
-        Task<PagedResultDto<AuditedFinancialDto>> GetPagedAsync(string search, string status, int page, int pageSize);
-        Task<IEnumerable<string>> GetStatusesAsync();
+        Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto , string updatedBy);
+        Task<int> DeleteAsync(DeleteRequestDto dto,string updatedBy);
+        Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate);
+       
     }
 }

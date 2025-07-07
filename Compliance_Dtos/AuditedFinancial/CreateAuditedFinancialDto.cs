@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations;
 public class CreateAuditedFinancialDto
 {
     [Required(ErrorMessage = "Date is required")]
+
     public DateTime Date { get; set; }
 
     [Required(ErrorMessage = "Document Type is required")]
@@ -39,9 +40,8 @@ public class CreateAuditedFinancialDto
 
     public DateTime? ApprovedDate { get; set; }
 
-    [Required(ErrorMessage = "Status is required")]
-    [MaxLength(50)]
-    public string Status { get; set; }
+    //[Required(ErrorMessage = "Status is required")]
+    //public int Status { get; set; }
 
     [Required(ErrorMessage = "CreatedBy (User ID) is required")]
     [MaxLength(100)]

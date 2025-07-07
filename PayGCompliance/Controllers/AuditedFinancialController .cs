@@ -1,8 +1,10 @@
 ﻿using Compliance_Dtos.AuditedFinancial;
 using Compliance_Services.AuditedFincancial;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
 
+[Authorize]
 [ApiController]
 [Route("api/[controller]")]
 public class AuditedFinancialController : ControllerBase
@@ -29,73 +31,159 @@ public class AuditedFinancialController : ControllerBase
 
         try
         {
-            var file = Request.Form.Files.FirstOrDefault();
-            if (file != null && file.Length > 0)
+            byte[]? documentBytes = null;
+            if (dto.AttachedDocument != null && dto.AttachedDocument.Length > 0)
             {
-                if (file.Length > 1024 * 1024) // Max 1MB
-                    return BadRequest(new { message = "File size should not exceed 1MB." });
+                if (dto.AttachedDocument.Length > 500 * 1024) // Max 1MB
+                    return BadRequest(new {
+                        message = "File size should not exceed 5KB."
+                    });
 
                 using var ms = new MemoryStream();
-                await file.CopyToAsync(ms);
-                //dto.AttachedDocument = Convert.ToBase64String(ms.ToArray());
-            }
-            else
-            {
-                dto.AttachedDocument = null;
+                await dto.AttachedDocument.CopyToAsync(ms);
+                documentBytes = ms.ToArray();
             }
 
-            var id = await _service.CreateAsync(dto);
-            return Ok(new { id, message = "Audited financial record created successfully." });
+            var id = await _service.CreateAsync(dto,documentBytes);
+            return Ok(new { 
+                success = true,
+                message = "Audited financial record created successfully."
+            });
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { message = "An error occurred: " + ex.Message });
+            return StatusCode(500, new { 
+                success = false,
+                message = ex.Message
+            });
         }
     }
 
 
-    [HttpGet]
-    public async Task<IActionResult> GetAll()
+    [HttpGet("audited-financialsPaged")]
+    public async Task<IActionResult> GetAuditedFinancialsAsync(
+     [FromQuery(Name = "id")] int? auditedFinancialId,
+     [FromQuery(Name = "search")] string? searchKeyword,
+     [FromQuery(Name = "status")] string? statusFilter,
+     [FromQuery(Name = "page")] int pageNumber = 1,
+     [FromQuery(Name = "pageSize")] int recordsPerPage = 10,
+     [FromQuery(Name = "fromDate")] DateTime? fromDate = null,
+     [FromQuery(Name = "toDate")] DateTime? toDate = null
+ )
     {
-        var data = await _service.GetAllAsync();
-        return Ok(data);
+        // If ID is provided, return a single record
+        if (auditedFinancialId.HasValue)
+        {
+            var financialRecord = await _service.GetByIdAsync(auditedFinancialId.Value);
+            if (financialRecord == null)
+                return NotFound(new { message = "Record not found." });
+
+            return Ok(financialRecord);
+        }
+
+        // Else, return paginated and filtered results
+        var paginatedResult = await _service.GetPagedAsync(
+            searchKeyword,
+            statusFilter,
+            pageNumber,
+            recordsPerPage,
+            fromDate,
+            toDate
+        );
+
+        return Ok(paginatedResult);
     }
 
-    [HttpGet("{id}")]
-    public async Task<IActionResult> GetById(int id)
+
+    [HttpPost("update")]
+
+    public async Task<IActionResult> Update([FromForm] UpdateAuditedFinancialDto dto)
     {
-        var data = await _service.GetByIdAsync(id);
-        if (data == null) return NotFound();
-        return Ok(data);
+
+        try
+        {
+            byte[]? documentBytes = null;
+            //if (dto.AttachedDocument != null && dto.AttachedDocument.Length > 0)
+            //{
+            //    if (dto.AttachedDocument.Length > 500 * 1024) // Max 1MB
+            //        return BadRequest(new
+            //        {
+            //            message = "File size should not exceed 5KB."
+            //        });
+            //    var hpf = dto.AttachedDocument;
+            //    var ms = new MemoryStream();
+            //    hpf.CopyTo(ms);
+            //    await dto.AttachedDocument.CopyToAsync(ms);
+            //    documentBytes = ms.ToArray();
+            //}
+            var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            if (string.IsNullOrEmpty(updatedBy))
+                return Unauthorized(new { message = "Invalid token or user ID missing" });
+
+            var hfc = HttpContext.Request.Form.Files;
+            var hpf = hfc[0]; 
+            MemoryStream memory = new();
+            hpf.CopyTo(memory);
+            documentBytes = memory.ToArray();
+            var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy);
+            if (updated==-1) return NotFound();
+            return Ok(new
+            {
+                success = true,
+                message = "Audited financial record Updated successfully."
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
 
-    [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, [FromBody] UpdateAuditedFinancialDto dto)
+    [HttpPost("delete")]
+    public async Task<IActionResult> Delete([FromBody] DeleteRequestDto dto)
     {
-        var updated = await _service.UpdateAsync(id, dto);
-        if (!updated) return NotFound();
-        return Ok(new { Message = "Updated successfully" });
+        try
+        {
+            var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            if (string.IsNullOrEmpty(updatedBy))
+                return Unauthorized(new { message = "Invalid token or user ID missing" });
+
+            var deleted = await _service.DeleteAsync(dto, updatedBy);
+           
+
+            if (deleted < 0)
+            {
+                return NotFound(new
+                {
+                    success = false,
+                    message = "Record not found."
+                });
+            }
+            else
+            {
+                return Ok(new
+                {
+                    success = true,
+                    message = "Deleted successfully"
+                });
+
+            }
+
+               
+        }
+        catch (Exception ex)
+        {
+            // Log the exception here if you have a logging framework
+            return StatusCode(500, new
+            {
+                success = false,
+                message = ex.Message
+            });
+        }
     }
 
-    [HttpDelete("{id}")]
-    public async Task<IActionResult> Delete(int id)
-    {
-        var deleted = await _service.DeleteAsync(id);
-        if (!deleted) return NotFound();
-        return Ok(new { Message = "Deleted successfully" });
-    }
-
-    [HttpGet("paged")]
-    public async Task<IActionResult> GetPaged([FromQuery] string search, [FromQuery] string status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
-    {
-        var paged = await _service.GetPagedAsync(search, status, page, pageSize);
-        return Ok(paged);
-    }
-
-    [HttpGet("statuses")]
-    public async Task<IActionResult> GetStatuses()
-    {
-        var statuses = await _service.GetStatusesAsync();
-        return Ok(statuses);
-    }
 }
