@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.Regulator;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -13,7 +13,7 @@ namespace Compliance_Repository.Regulator
         Task<RegulatorDto?> GetByIdAsync(int id);
         Task<RegulatorDto> AddAsync(RegulatorDto regulator);
         Task<RegulatorDto> UpdateAsync(RegulatorDto regulator);
-        Task<bool> DeleteAsync(int id);
+        Task<bool> DeleteAsync(int id, string performedBy);
 
     }
 }

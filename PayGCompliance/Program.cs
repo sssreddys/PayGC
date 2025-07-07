@@ -1,5 +1,4 @@
 ﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Dtos;
 using Compliance_Repository.User;
 using Compliance_Services.AuditedFincancial;
 using Compliance_Services.JWT;
@@ -10,6 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using System.Globalization;
+using Compliance_Dtos.Regulator;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -47,12 +48,25 @@ SqlMapper.SetTypeMap(
     typeof(RegulatorDto),
     new CustomPropertyTypeMap(
         typeof(RegulatorDto),
-        (type, columnName) => type.GetProperties()
-            .FirstOrDefault(prop =>
-                prop.Name.Equals(columnName.Replace("_", ""), StringComparison.OrdinalIgnoreCase)
-            )
+        (type, columnName) =>
+        {
+            // Remove 'rg_' prefix
+            if (columnName.StartsWith("rg_"))
+                columnName = columnName.Substring(3);
+
+            // Convert snake_case to PascalCase
+            string pascalCaseName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                columnName.Replace("_", " ")
+            ).Replace(" ", "");
+
+            // Find matching property
+            return type.GetProperties()
+                       .FirstOrDefault(prop =>
+                           prop.Name.Equals(pascalCaseName, StringComparison.OrdinalIgnoreCase));
+        }
     )
 );
+
 
 
 // Call the RegisterTypes method to register your custom services
