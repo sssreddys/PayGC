@@ -1,4 +1,5 @@
 ﻿using Compliance_Services.JWT;
+using Compliance_Services.RbiNotifications;
 using Compliance_Services.Regulator;
 using Compliance_Services.User;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ namespace Compliance_Services
             services.AddScoped<IUserService,UserService>();
             services.AddScoped<RegulatorService>();
             services.AddScoped<IJwtTokenService ,JwtTokenService>();
+            services.AddScoped<IRbiNotificationService,RbiNotificationService>();
         }
     }
 
