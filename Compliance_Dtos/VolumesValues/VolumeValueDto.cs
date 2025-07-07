@@ -4,17 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compliance_Dtos.AuditedFinancial
+
+namespace Compliance_Dtos.VolumesValues
 {
-    public class AuditedFinancialDto
+    public class VolumeValueDto
     {
-        public int AuditedFinancialId { get; set; }
+        public int VolumeValueId { get; set; }
         public DateTime Date { get; set; }
-        public string DocumentType { get; set; }
+        public int FinancialYear { get; set; }
         public string Period { get; set; }
-        public string FinancialYear { get; set; }
-        public byte[]? AttachedDocument { get; set; }
-        public string AuditedBy { get; set; }
+        public int VolumeOfTransactions { get; set; }
+        public decimal ValueOfTransactions { get; set; }
         public string ReviewedBy { get; set; }
         public DateTime? ReviewedDate { get; set; }
         public string ApprovedBy { get; set; }
