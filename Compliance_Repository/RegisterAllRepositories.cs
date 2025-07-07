@@ -1,4 +1,5 @@
-﻿using Compliance_Repository.Regulator;
+﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Repository.Regulator;
 using Compliance_Repository.User;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -15,6 +16,7 @@ namespace Compliance_Repository
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRegulatorRepository, RegulatorRepository>();
+            services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
 
         }
     }

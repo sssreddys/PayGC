@@ -13,7 +13,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         _conn = configuration.GetConnectionString("DefaultConnection");
     }
 
-    public async Task<int> CreateAsync(CreateAuditedFinancialDto dto)
+    public async Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -22,71 +22,70 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         p.Add("@DocumentType", dto.DocumentType);
         p.Add("@Period", dto.Period);
         p.Add("@FinancialYear", dto.FinancialYear);
-        p.Add("@AttachedDocument", dto.AttachedDocument);
+        p.Add("@AttachedDocument", documentBytes, DbType.Binary);
         p.Add("@AuditedBy", dto.AuditedBy);
         p.Add("@ReviewedBy", dto.ReviewedBy);
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
-        p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@Status", dto.Status);
+        p.Add("@ApprovedDate",dto.ApprovedDate);
         p.Add("@CreatedBy", dto.CreatedBy);
         p.Add("@CreatedAt", DateTime.UtcNow);
 
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
-        await db.ExecuteAsync("sp_CreateAuditedFinancial", p, commandType: CommandType.StoredProcedure);
+        await db.ExecuteAsync("sp_create_audited_financial", p, commandType: CommandType.StoredProcedure);
 
         return p.Get<int>("@ReturnVal");
-    }
-
-    public async Task<IEnumerable<AuditedFinancialDto>> GetAllAsync()
-    {
-        using var db = new SqlConnection(_conn);
-        var result = await db.QueryAsync<AuditedFinancialDto>("sp_GetAllAuditedFinancials", commandType: CommandType.StoredProcedure);
-        return result;
     }
 
     public async Task<AuditedFinancialDto> GetByIdAsync(int id)
     {
         using var db = new SqlConnection(_conn);
         var result = await db.QueryFirstOrDefaultAsync<AuditedFinancialDto>(
-            "sp_GetAuditedFinancialById",
+            "sp_audited_financial_byid",
             new { Id = id },
             commandType: CommandType.StoredProcedure);
         return result;
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateAuditedFinancialDto dto)
+    public async Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy)
     {
         using var db = new SqlConnection(_conn);
-        var p = new DynamicParameters();
+        var p = new DynamicParameters();    
 
-        p.Add("@Id", id);
+       
+
+        p.Add("@Id", dto.Id);
         p.Add("@Date", dto.Date);
         p.Add("@DocumentType", dto.DocumentType);
         p.Add("@Period", dto.Period);
         p.Add("@FinancialYear", dto.FinancialYear);
-        p.Add("@AttachedDocument", dto.AttachedDocument);
+        p.Add("@AttachedDocument", documentBytes, DbType.Binary);
         p.Add("@AuditedBy", dto.AuditedBy);
         p.Add("@ReviewedBy", dto.ReviewedBy);
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@Status", dto.Status);
-        p.Add("@UpdatedAt", dto.UpdatedAt ?? DateTime.UtcNow);
+        p.Add("@UpdatedAt", DateTime.UtcNow);
+        p.Add("@UpdatedBy", updatedBy);
+        p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
-        var result = await db.ExecuteAsync("sp_UpdateAuditedFinancial", p, commandType: CommandType.StoredProcedure);
-        return result > 0;
+        await db.ExecuteAsync("sp_update_audited_financial", p, commandType: CommandType.StoredProcedure);
+        return p.Get<int>("@ReturnVal");
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy)
     {
-        using var db = new SqlConnection(_conn);
-        var result = await db.ExecuteAsync("sp_DeleteAuditedFinancial", new { Id = id }, commandType: CommandType.StoredProcedure);
-        return result > 0;
+        var db = new SqlConnection(_conn);
+        var p = new DynamicParameters();
+        p.Add("@Id", dto.Id);
+        p.Add("@UpdatedBy", updatedBy);
+        p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
+        await db.ExecuteAsync("sp_soft_delete_audited_financial",p, commandType: CommandType.StoredProcedure);
+        return p.Get<int>("@ReturnVal");
     }
 
-    public async Task<PagedResultDto<AuditedFinancialDto>> GetPagedAsync(string search, string status, int page, int pageSize)
+    public async Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -94,24 +93,21 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         p.Add("@Status", status);
         p.Add("@Page", page);
         p.Add("@PageSize", pageSize);
+        p.Add("@FromDate", fromDate?.Date);
+        p.Add("@ToDate", toDate?.Date);
 
-        using var multi = await db.QueryMultipleAsync("sp_GetPagedAuditedFinancials", p, commandType: CommandType.StoredProcedure);
+        using var multi = await db.QueryMultipleAsync("sp_get_audited_financials_paged", p, commandType: CommandType.StoredProcedure);
         var data = await multi.ReadAsync<AuditedFinancialDto>();
         var total = await multi.ReadFirstAsync<int>();
 
-        return new PagedResultDto<AuditedFinancialDto>
+        return new PagedResult<AuditedFinancialDto>
         {
             Data = data,
-            TotalCount = total,
+            TotalRecords = total,
             Page = page,
             PageSize = pageSize
         };
     }
 
-    public async Task<IEnumerable<string>> GetStatusesAsync()
-    {
-        using var db = new SqlConnection(_conn);
-        var result = await db.QueryAsync<string>("sp_GetDistinctStatuses", commandType: CommandType.StoredProcedure);
-        return result;
-    }
+  
 }
