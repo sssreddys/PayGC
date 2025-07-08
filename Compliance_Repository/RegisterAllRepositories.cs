@@ -16,6 +16,8 @@ namespace Compliance_Repository
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRegulatorRepository, RegulatorRepository>();
+            services.AddScoped<IVolumesValuesRepository, VolumesValuesRepository>();
+            services.AddScoped<IBoardResolutionRepository, BoardResolutionRepository>();
             services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
 
         }
