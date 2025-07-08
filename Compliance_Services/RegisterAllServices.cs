@@ -1,4 +1,5 @@
 ﻿using Compliance_Services.JWT;
+using Compliance_Services.RbiNotifications;
 using Compliance_Services.Regulator;
 using Compliance_Services.User;
 using Compliance_Services.AuditedFincancial;
@@ -23,6 +24,7 @@ namespace Compliance_Services
             services.AddScoped<IVolumesValuesService, VolumesValuesService>(); 
             services.AddScoped<IBoardResolutionService, BoardResolutionService>();
             services.AddScoped<IJwtTokenService ,JwtTokenService>();
+            services.AddScoped<IRbiNotificationService,RbiNotificationService>();
         }
     }
 
