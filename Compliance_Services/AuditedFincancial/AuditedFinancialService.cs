@@ -1,4 +1,5 @@
 ﻿using Compliance_Dtos.AuditedFinancial;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,12 +18,12 @@ namespace Compliance_Services.AuditedFincancial
             _repository = repository;
         }
 
-        public Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes) => _repository.CreateAsync(dto, documentBytes);
-        public Task<AuditedFinancialDto> GetByIdAsync(int id) => _repository.GetByIdAsync(id);
-        public Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy) => _repository.UpdateAsync( documentBytes, dto, updatedBy);
-        public Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy) => _repository.DeleteAsync(dto, updatedBy);
-        public Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
-        => _repository.GetPagedAsync(search, status, page, pageSize, fromDate, toDate);
+        public Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes, string controller,string created_by) => _repository.CreateAsync(dto, documentBytes, controller, created_by);
+        public Task<AuditedFinancialDto> GetByIdAsync(int id, string controller) => _repository.GetByIdAsync(id, controller);
+        public Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy, string controller) => _repository.UpdateAsync( documentBytes, dto, updatedBy, controller);
+        public Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy, string controller) => _repository.DeleteAsync(dto, updatedBy, controller);
+        public Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate, string controller)
+        => _repository.GetPagedAsync(search, status, page, pageSize, fromDate, toDate, controller);
       
     }
 

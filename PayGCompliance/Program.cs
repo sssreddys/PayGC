@@ -1,4 +1,5 @@
 ﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Dtos.Regulator;
 using Compliance_Repository.User;
 using Compliance_Services.AuditedFincancial;
 using Compliance_Services.JWT;
@@ -8,9 +9,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System.Text;
+using PayGCompliance.Common;
 using System.Globalization;
-using Compliance_Dtos.Regulator;
+using System.Text;
+using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -33,6 +35,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidAudience = builder.Configuration["Jwt:Audience"],
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
+        };
+        opts.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse(); // Suppress the default response
+
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+
+                var result = JsonSerializer.Serialize(new
+                {
+                    success=false,
+                    message = "Unauthorized"
+                });
+
+                return context.Response.WriteAsync(result);
+            }
+
         };
     });
 
