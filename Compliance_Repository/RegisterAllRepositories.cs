@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos.AuditedFinancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
 using Compliance_Repository.Agencies;
 using Compliance_Repository.Policies;
 using Compliance_Repository.RbiNotifications;
@@ -19,6 +19,9 @@ namespace Compliance_Repository
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRegulatorRepository, RegulatorRepository>();
+            services.AddScoped<IVolumesValuesRepository, VolumesValuesRepository>();
+            services.AddScoped<IBoardResolutionRepository, BoardResolutionRepository>();
+            services.AddScoped<ICertificationRepository, CertificationRepository>();
             services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
             services.AddScoped< IRbiNotificationRepository,RbiNotificationRepository>();
             services.AddScoped< IAgenciesRepository,AgenciesRepository>();

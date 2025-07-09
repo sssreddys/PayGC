@@ -1,5 +1,5 @@
-﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Services.AuditedFincancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 public class AuditedFinancialController : ControllerBase
 {
     private readonly IAuditedFinancialService _service;
+    private string controller_name = "audited";
 
     public AuditedFinancialController(IAuditedFinancialService service)
     {
@@ -18,7 +19,7 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("create")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Create([FromForm] CreateAuditedFinancialDto dto)
+    public async Task<IActionResult> Create([FromForm] CreateAuditedTemplateDto dto)
     {
         if (!ModelState.IsValid)
         {
@@ -35,16 +36,20 @@ public class AuditedFinancialController : ControllerBase
             if (dto.AttachedDocument != null && dto.AttachedDocument.Length > 0)
             {
                 if (dto.AttachedDocument.Length > 500 * 1024) // Max 1MB
-                    return BadRequest(new {
-                        message = "File size should not exceed 5KB."
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Attached Document size should not exceed 500KB."
+
                     });
 
                 using var ms = new MemoryStream();
                 await dto.AttachedDocument.CopyToAsync(ms);
                 documentBytes = ms.ToArray();
             }
+            var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
 
-            var id = await _service.CreateAsync(dto,documentBytes);
+            var id = await _service.CreateAsync(dto,documentBytes, this.controller_name, created_by!);
             return Ok(new { 
                 success = true,
                 message = "Audited financial record created successfully."
@@ -74,7 +79,7 @@ public class AuditedFinancialController : ControllerBase
         // If ID is provided, return a single record
         if (auditedFinancialId.HasValue)
         {
-            var financialRecord = await _service.GetByIdAsync(auditedFinancialId.Value);
+            var financialRecord = await _service.GetByIdAsync(auditedFinancialId.Value, this.controller_name);
             if (financialRecord == null)
                 return NotFound(new { message = "Record not found." });
 
@@ -88,7 +93,8 @@ public class AuditedFinancialController : ControllerBase
             pageNumber,
             recordsPerPage,
             fromDate,
-            toDate
+            toDate,
+            this.controller_name
         );
 
         return Ok(paginatedResult);
@@ -97,25 +103,12 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("update")]
 
-    public async Task<IActionResult> Update([FromForm] UpdateAuditedFinancialDto dto)
+    public async Task<IActionResult> Update([FromForm] UpdateAuditedTemplateDto dto)
     {
 
         try
         {
             byte[]? documentBytes = null;
-            //if (dto.AttachedDocument != null && dto.AttachedDocument.Length > 0)
-            //{
-            //    if (dto.AttachedDocument.Length > 500 * 1024) // Max 1MB
-            //        return BadRequest(new
-            //        {
-            //            message = "File size should not exceed 5KB."
-            //        });
-            //    var hpf = dto.AttachedDocument;
-            //    var ms = new MemoryStream();
-            //    hpf.CopyTo(ms);
-            //    await dto.AttachedDocument.CopyToAsync(ms);
-            //    documentBytes = ms.ToArray();
-            //}
             var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
@@ -125,7 +118,7 @@ public class AuditedFinancialController : ControllerBase
             MemoryStream memory = new();
             hpf.CopyTo(memory);
             documentBytes = memory.ToArray();
-            var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy);
+            var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy, this.controller_name);
             if (updated==-1) return NotFound();
             return Ok(new
             {
@@ -152,7 +145,7 @@ public class AuditedFinancialController : ControllerBase
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-            var deleted = await _service.DeleteAsync(dto, updatedBy);
+            var deleted = await _service.DeleteAsync(dto, updatedBy, this.controller_name);
            
 
             if (deleted < 0)
