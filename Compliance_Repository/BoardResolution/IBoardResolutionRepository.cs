@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos.AuditedFinancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
 using Compliance_Dtos.BoardResolution;
 
 public interface IBoardResolutionRepository

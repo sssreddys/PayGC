@@ -11,6 +11,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Compliance_Services.VolumesValues;
+using Compliance_Services.Certifications;
 
 namespace Compliance_Services
 {
@@ -23,6 +24,7 @@ namespace Compliance_Services
             services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
             services.AddScoped<IVolumesValuesService, VolumesValuesService>(); 
             services.AddScoped<IBoardResolutionService, BoardResolutionService>();
+            services.AddScoped<ICertificationService, CertificationService>();
             services.AddScoped<IJwtTokenService ,JwtTokenService>();
             services.AddScoped<IRbiNotificationService,RbiNotificationService>();
         }
