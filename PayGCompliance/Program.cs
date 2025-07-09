@@ -12,6 +12,7 @@ using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Globalization;
 using Compliance_Dtos.Regulator;
+using Compliance_Dtos.Agencies;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,9 +47,10 @@ builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 
 
 SqlMapper.SetTypeMap(
-    typeof(RegulatorDto),
+    typeof(RegulatorAddDto),
+
     new CustomPropertyTypeMap(
-        typeof(RegulatorDto),
+        typeof(RegulatorAddDto),
         (type, columnName) =>
         {
             // Remove 'rg_' prefix
@@ -67,6 +69,32 @@ SqlMapper.SetTypeMap(
         }
     )
 );
+
+SqlMapper.SetTypeMap(
+    typeof(AgencyAddDto),
+    new CustomPropertyTypeMap(
+        typeof(AgencyAddDto),
+        (type, columnName) =>
+        {
+            // Remove 'rg_' prefix
+            if (columnName.StartsWith("ag_"))
+                columnName = columnName.Substring(3);
+
+            // Convert snake_case to PascalCase
+            string pascalCaseName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                columnName.Replace("_", " ")
+            ).Replace(" ", "");
+
+            // Find matching property
+            return type.GetProperties()
+                       .FirstOrDefault(prop =>
+                           prop.Name.Equals(pascalCaseName, StringComparison.OrdinalIgnoreCase));
+        }
+    )
+);
+
+
+
 
 
 

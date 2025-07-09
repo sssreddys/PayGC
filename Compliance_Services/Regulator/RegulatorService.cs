@@ -1,4 +1,5 @@
-﻿using Compliance_Dtos.Regulator;
+﻿// Compliance_Services.Regulator.RegulatorService
+using Compliance_Dtos.Regulator;
 using Compliance_Repository.Regulator;
 using System;
 using System.Collections.Generic;
@@ -17,18 +18,19 @@ namespace Compliance_Services.Regulator
             _repository = repository;
         }
 
-        public async Task<IEnumerable<RegulatorDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
+        public async Task<IEnumerable<RegulatorGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
         {
             return await _repository.GetAllAsync(pageNumber, pageSize, searchTerm);
         }
 
-        public async Task<RegulatorDto?> GetByIdAsync(int id) => await _repository.GetByIdAsync(id);
-        public async Task<RegulatorDto?> AddAsync(RegulatorDto regulator)
+        public async Task<RegulatorGetDto?> GetByIdAsync(int id) => await _repository.GetByIdAsync(id);
+
+        public async Task<RegulatorGetDto> AddAsync(RegulatorAddDto regulator) // Takes RegulatorAddDto, returns RegulatorGetDto
         {
             return await _repository.AddAsync(regulator);
         }
 
-        public async Task<RegulatorDto?> UpdateAsync(RegulatorDto regulator)
+        public async Task<RegulatorGetDto?> UpdateAsync(RegulatorUpdateDto regulator) // Takes RegulatorUpdateDto, returns RegulatorGetDto
         {
             return await _repository.UpdateAsync(regulator);
         }

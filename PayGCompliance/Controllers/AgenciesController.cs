@@ -1,18 +1,17 @@
-﻿// PayGCompliance.Controllers.Regulator.RegulatorsController
-using Compliance_Dtos.Regulator;
-using Compliance_Services.Regulator;
+﻿using Compliance_Dtos.Agencies;
+using Compliance_Services.Agencies;
 using Microsoft.AspNetCore.Mvc;
-using PayGCompliance.Common; // Assuming ApiResponse is defined here
+using PayGCompliance.Common; // Assuming ApiResponse is in this namespace
 
-namespace PayGCompliance.Controllers.Regulator
+namespace PayGCompliance.Controllers
 {
     [ApiController]
-    [Route("api/regulators")]
-    public class RegulatorsController : ControllerBase
+    [Route("api/agencies")]
+    public class AgenciesController : ControllerBase // Changed to ControllerBase, common for APIs
     {
-        private readonly RegulatorService _service;
+        private readonly AgenciesService _service;
 
-        public RegulatorsController(RegulatorService service)
+        public AgenciesController(AgenciesService service)
         {
             _service = service;
         }
@@ -22,10 +21,10 @@ namespace PayGCompliance.Controllers.Regulator
         {
             var data = await _service.GetAllAsync(pageNumber, pageSize, searchTerm);
 
-            return Ok(new ApiResponse<IEnumerable<RegulatorGetDto>> // Changed to RegulatorGetDto
+            return Ok(new ApiResponse<IEnumerable<AgencyGetDto>> // Changed DTO type
             {
                 Success = true,
-                Message = "Regulators fetched successfully.",
+                Message = "Agencies fetched successfully.",
                 Data = data
             });
         }
@@ -33,44 +32,46 @@ namespace PayGCompliance.Controllers.Regulator
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
         {
-            var regulator = await _service.GetByIdAsync(id);
-            if (regulator == null)
+            var agency = await _service.GetByIdAsync(id);
+            if (agency == null)
             {
-                return NotFound(new ApiResponse<RegulatorGetDto> // Changed to RegulatorGetDto
+                return NotFound(new ApiResponse<AgencyGetDto> // Changed DTO type
                 {
                     Success = false,
-                    Message = "Regulator not found.",
+                    Message = "Agency not found.",
                     Data = null
                 });
             }
 
-            return Ok(new ApiResponse<RegulatorGetDto> // Changed to RegulatorGetDto
+            return Ok(new ApiResponse<AgencyGetDto> // Changed DTO type
             {
                 Success = true,
-                Message = "Regulator found.",
-                Data = regulator
+                Message = "Agency found.",
+                Data = agency
             });
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add(RegulatorAddDto regulatorAddDto) // Accepts RegulatorAddDto
+        public async Task<IActionResult> Add([FromBody] AgencyAddDto agency) // Changed input DTO, added [FromBody]
         {
-            // ID should not be set by the client for an Add operation.
-            // regulatorAddDto.Id = 0; // This line is not strictly needed if Id is [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+            // Id is not expected from client on Add, will be set by DB
+            // agency.Id = 0; // This line is not needed if you use a dedicated AgencyAddDto
 
             try
             {
-                var newRegulator = await _service.AddAsync(regulatorAddDto); // Pass RegulatorAddDto
+                var newAgency = await _service.AddAsync(agency);
 
-                return Ok(new ApiResponse<RegulatorGetDto> // Returns RegulatorGetDto
+                // Use CreatedAtAction for proper REST response for resource creation
+                return CreatedAtAction(nameof(GetById), new { id = newAgency?.Id }, new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Regulator added successfully.",
-                    Data = newRegulator!
+                    Message = "Agency added successfully.",
+                    Data = newAgency!
                 });
             }
             catch (Exception ex)
             {
+                // Consider more specific exception handling for different error codes
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
@@ -80,11 +81,10 @@ namespace PayGCompliance.Controllers.Regulator
             }
         }
 
-
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, RegulatorUpdateDto regulatorUpdateDto) // Accepts RegulatorUpdateDto
+        public async Task<IActionResult> Update(int id, [FromBody] AgencyUpdateDto agency) // Changed input DTO, added [FromBody]
         {
-            if (id != regulatorUpdateDto.Id)
+            if (id != agency.Id)
             {
                 return BadRequest(new ApiResponse<object>
                 {
@@ -96,27 +96,18 @@ namespace PayGCompliance.Controllers.Regulator
 
             try
             {
-                var updatedRegulator = await _service.UpdateAsync(regulatorUpdateDto); // Pass RegulatorUpdateDto
+                var updatedAgency = await _service.UpdateAsync(agency);
 
-                if (updatedRegulator == null)
-                {
-                    return NotFound(new ApiResponse<RegulatorGetDto>
-                    {
-                        Success = false,
-                        Message = "Regulator not found or update failed.",
-                        Data = null
-                    });
-                }
-
-                return Ok(new ApiResponse<RegulatorGetDto> // Returns RegulatorGetDto
+                return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Regulator updated successfully.",
-                    Data = updatedRegulator
+                    Message = "Agency updated successfully.",
+                    Data = updatedAgency
                 });
             }
             catch (Exception ex)
             {
+                // Consider more specific exception handling for different error codes
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
@@ -125,7 +116,6 @@ namespace PayGCompliance.Controllers.Regulator
                 });
             }
         }
-
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
@@ -136,10 +126,11 @@ namespace PayGCompliance.Controllers.Regulator
 
                 if (!result)
                 {
+                    // More specific messages based on the exception thrown by the repository
                     return NotFound(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Regulator not found or could not be deleted.",
+                        Message = "Agency not found or could not be deleted.",
                         Data = null
                     });
                 }
@@ -147,12 +138,13 @@ namespace PayGCompliance.Controllers.Regulator
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Regulator deleted successfully.",
-                    Data = result
+                    Message = "Agency deleted successfully.",
+                    Data = null
                 });
             }
             catch (Exception ex)
             {
+                // Catching specific exceptions from repository is better
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,

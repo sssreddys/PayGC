@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Compliance_Services.Agencies;
+using Compliance_Services.Policies;
 
 namespace Compliance_Services
 {
@@ -21,6 +23,8 @@ namespace Compliance_Services
             services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
             services.AddScoped<IJwtTokenService ,JwtTokenService>();
             services.AddScoped<IRbiNotificationService,RbiNotificationService>();
+            services.AddScoped<AgenciesService>();
+            services.AddScoped<IPolicyService,PolicyService>();
         }
     }
 

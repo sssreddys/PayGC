@@ -1,33 +1,32 @@
-﻿// Compliance_Repository.Regulator.RegulatorRepository
-using Compliance_Dtos.Regulator;
-using Dapper;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Compliance_Dtos.Agencies;
+using Dapper;
 
-namespace Compliance_Repository.Regulator
+namespace Compliance_Repository.Agencies
 {
-    public class RegulatorRepository : IRegulatorRepository
+    public class AgenciesRepository : IAgenciesRepository
     {
         private readonly string _conn;
 
-        public RegulatorRepository(IConfiguration configuration)
+        public AgenciesRepository(IConfiguration configuration)
         {
             _conn = configuration.GetConnectionString("DefaultConnection")
                 ?? throw new ArgumentNullException("DefaultConnection");
         }
 
-        public async Task<IEnumerable<RegulatorGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
+        public async Task<IEnumerable<AgencyGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
         {
             using var db = new SqlConnection(_conn);
 
-            return await db.QueryAsync<RegulatorGetDto>( // Changed to RegulatorGetDto
-                "sp_get_all_regulators",
+            return await db.QueryAsync<AgencyGetDto>( // Changed DTO type
+                "sp_get_all_agencys",
                 new
                 {
                     PageNumber = pageNumber,
@@ -38,33 +37,32 @@ namespace Compliance_Repository.Regulator
             );
         }
 
-        public async Task<RegulatorGetDto?> GetByIdAsync(int id)
+        public async Task<AgencyGetDto?> GetByIdAsync(int id)
         {
             using var db = new SqlConnection(_conn);
-            return await db.QuerySingleOrDefaultAsync<RegulatorGetDto>( // Changed to RegulatorGetDto
-                "sp_get_regulator_by_id",
+            return await db.QuerySingleOrDefaultAsync<AgencyGetDto>( // Changed DTO type
+                "sp_get_agency_by_id",
                 new { Id = id },
                 commandType: CommandType.StoredProcedure
             );
         }
 
-        public async Task<RegulatorGetDto> AddAsync(RegulatorAddDto regulator) // Takes RegulatorAddDto, returns RegulatorGetDto
+        public async Task<AgencyGetDto?> AddAsync(AgencyAddDto agency) // Changed input DTO
         {
             using var db = new SqlConnection(_conn);
 
-            // Insert and get the newly inserted ID
             var id = await db.ExecuteScalarAsync<int>(
-                "sp_add_regulator",
+                "sp_add_agency",
                 new
                 {
-                    regulator.Name,
-                    regulator.Address,
-                    regulator.ContactPerson,
-                    regulator.MobileNumber,
-                    regulator.Email,
-                    regulator.ContactAddress,
-                    regulator.Status,
-                    regulator.CreatedBy
+                    agency.Name,
+                    agency.Address,
+                    agency.ContactPerson,
+                    agency.MobileNumber,
+                    agency.Email,
+                    agency.ContactAddress,
+                    agency.Status,
+                    agency.CreatedBy // Matches CreatedBy parameter in SP
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -77,32 +75,30 @@ namespace Compliance_Repository.Regulator
                 throw new Exception("Mobile number must contain only digits.");
             if (id == -4)
                 throw new Exception("Invalid email format.");
+            if (id <= 0) // Catch any other non-positive return codes indicating failure
+                throw new Exception("Failed to add agency.");
 
-            // Fetch and return the inserted record using RegulatorGetDto
-            var newRegulator = await GetByIdAsync(id);
-            if (newRegulator == null)
-            {
-                throw new Exception("Failed to retrieve the newly added regulator.");
-            }
-            return newRegulator;
+            // Fetch and return the newly inserted record using GetByIdAsync
+            return await GetByIdAsync(id);
         }
 
-        public async Task<RegulatorGetDto?> UpdateAsync(RegulatorUpdateDto regulator) // Takes RegulatorUpdateDto, returns RegulatorGetDto
+        public async Task<AgencyGetDto?> UpdateAsync(AgencyUpdateDto agency) // Changed input DTO
         {
             using var db = new SqlConnection(_conn);
 
             var resultCode = await db.ExecuteScalarAsync<int>(
-                "sp_update_regulator",
+                "sp_update_agency",
                 new
                 {
-                    regulator.Id,
-                    regulator.Name,
-                    regulator.Address,
-                    regulator.ContactPerson,
-                    regulator.MobileNumber,
-                    regulator.Email,
-                    regulator.ContactAddress,
-                    regulator.PerformedBy
+                    agency.Id,
+                    agency.Name,
+                    agency.Address,
+                    agency.ContactPerson,
+                    agency.MobileNumber,
+                    agency.Email,
+                    agency.ContactAddress,
+                  
+                    agency.PerformedBy // Matches PerformedBy parameter in SP
                 },
                 commandType: CommandType.StoredProcedure
             );
@@ -115,11 +111,10 @@ namespace Compliance_Repository.Regulator
                 throw new Exception("Mobile number must contain only digits.");
             if (resultCode == -4)
                 throw new Exception("Invalid email format.");
-            if (resultCode != 1)
+            if (resultCode != 1) // Expecting 1 for success
                 throw new Exception("Update failed.");
 
-            // Fetch and return the updated record using RegulatorGetDto
-            return await GetByIdAsync(regulator.Id);
+            return await GetByIdAsync(agency.Id);
         }
 
         public async Task<bool> DeleteAsync(int id, string performedBy)
@@ -127,17 +122,17 @@ namespace Compliance_Repository.Regulator
             using var db = new SqlConnection(_conn);
 
             var result = await db.ExecuteScalarAsync<int>(
-                "sp_delete_regulator",
+                "sp_delete_agency",
                 new { Id = id, PerformedBy = performedBy },
                 commandType: CommandType.StoredProcedure
             );
 
             if (result == -1)
-                throw new Exception("Regulator not found.");
+                throw new Exception("Agency not found.");
             if (result == -2)
-                throw new Exception("Regulator is already inactive.");
+                throw new Exception("Agency is already inactive.");
 
-            return result == 1;
+            return result == 1; // Return true only if result is 1 (success)
         }
     }
 }
