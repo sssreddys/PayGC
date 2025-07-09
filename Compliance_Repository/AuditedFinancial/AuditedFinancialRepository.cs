@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos.AuditedFinancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 using System.Data;
@@ -13,7 +13,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         _conn = configuration.GetConnectionString("DefaultConnection");
     }
 
-    public async Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes, string controller, string created_by)
+    public async Task<int> CreateAsync(CreateAuditedTemplateDto dto, byte[]? documentBytes, string controller, string created_by)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -44,7 +44,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         return p.Get<int>("@ReturnVal");
     }
 
-    public async Task<AuditedFinancialDto> GetByIdAsync(int id, string controller)
+    public async Task<AuditedTemplateListDto> GetByIdAsync(int id, string controller)
     {
         using var db = new SqlConnection(_conn);
 
@@ -55,14 +55,14 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
             _ => throw new ArgumentException("Invalid controller name.", nameof(controller))
         };
 
-        return await db.QueryFirstOrDefaultAsync<AuditedFinancialDto>(
+        return await db.QueryFirstOrDefaultAsync<AuditedTemplateListDto>(
             spName,
             new { Id = id },
             commandType: CommandType.StoredProcedure
         );
     }
 
-    public async Task<int> UpdateAsync(byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy, string controller)
+    public async Task<int> UpdateAsync(byte[]? documentBytes, UpdateAuditedTemplateDto dto, string updatedBy, string controller)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -115,7 +115,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         return p.Get<int>("@ReturnVal");
     }
 
-    public async Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(
+    public async Task<PagedResult<AuditedTemplateListDto>> GetPagedAsync(
         string? search,
         string? status,
         int page,
@@ -142,10 +142,10 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         };
 
         using var multi = await db.QueryMultipleAsync(spName, p, commandType: CommandType.StoredProcedure);
-        var data = await multi.ReadAsync<AuditedFinancialDto>();
+        var data = await multi.ReadAsync<AuditedTemplateListDto>();
         var total = await multi.ReadFirstAsync<int>();
 
-        return new PagedResult<AuditedFinancialDto>
+        return new PagedResult<AuditedTemplateListDto>
         {
             Data = data,
             TotalRecords = total,

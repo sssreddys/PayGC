@@ -1,5 +1,5 @@
-﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Services.AuditedFincancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("create")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Create([FromForm] CreateAuditedFinancialDto dto)
+    public async Task<IActionResult> Create([FromForm] CreateAuditedTemplateDto dto)
     {
         if (!ModelState.IsValid)
         {
@@ -103,7 +103,7 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("update")]
 
-    public async Task<IActionResult> Update([FromForm] UpdateAuditedFinancialDto dto)
+    public async Task<IActionResult> Update([FromForm] UpdateAuditedTemplateDto dto)
     {
 
         try

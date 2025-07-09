@@ -6,13 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compliance_Dtos.AuditedFinancial
+namespace Compliance_Dtos.Common
 {
-    public class UpdateAuditedFinancialDto
+    public class CreateBaseDto
     {
-        public int Id { get; set; }
         [Required(ErrorMessage = "Date is required")]
-
         public DateTime Date { get; set; }
 
         [Required(ErrorMessage = "Document Type is required")]
@@ -46,6 +44,5 @@ namespace Compliance_Dtos.AuditedFinancial
         public string ApprovedBy { get; set; }
 
         public DateTime? ApprovedDate { get; set; }
-
     }
 }
