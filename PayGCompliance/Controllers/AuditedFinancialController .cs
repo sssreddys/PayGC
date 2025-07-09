@@ -19,7 +19,7 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("create")]
     [Consumes("multipart/form-data")]
-    public async Task<IActionResult> Create([FromForm] CreateAuditedFinancialDto dto)
+    public async Task<IActionResult> Create([FromForm] CreateAuditedTemplateDto dto)
     {
         if (!ModelState.IsValid)
         {
@@ -103,7 +103,7 @@ public class AuditedFinancialController : ControllerBase
 
     [HttpPost("update")]
 
-    public async Task<IActionResult> Update([FromForm] UpdateAuditedFinancialDto dto)
+    public async Task<IActionResult> Update([FromForm] UpdateAuditedTemplateDto dto)
     {
 
         try
