@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-namespace Compliance_Dtos.AuditedFinancial;
+namespace Compliance_Dtos.AuditedAndTemplate;
 
 
 public interface IAuditedFinancialRepository

@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos.AuditedFinancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Compliance_Services.AuditedFincancial
+namespace Compliance_Services.AuditedAndTemplate
 {
     public class AuditedFinancialService : IAuditedFinancialService
     {
