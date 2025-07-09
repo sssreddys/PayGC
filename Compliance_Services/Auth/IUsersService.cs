@@ -4,9 +4,11 @@ namespace Compliance_Services.User
 {
     public interface IUserService
     {
-        Task<string> RegisterUserAsync(RegisterUserDto dto, byte[]? profileImageBytes);
+        Task<string> RegisterUserAsync(RegisterUserDto dto, string? addedBy);
         Task<AuthUserDto?> GetUserByLoginInputAsync(string loginInput);
         Task<UserProfileDto?> GetProfileAsync(string userId);
+        Task<IEnumerable<UserProfileDto>> GetUsersAsync(GetUsersFilterDto filter);
+        Task<string> UpdateUserAsync(string tokenUserId, UserUpdateDto dto);
 
     }
 

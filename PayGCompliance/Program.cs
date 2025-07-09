@@ -1,8 +1,7 @@
-﻿using Compliance_Repository.User;
+﻿using Compliance_Dtos;
 using Compliance_Services.JWT;
-using Compliance_Services.User;
+using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -32,11 +31,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // 🧱 Dependency Injection
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-
-
 
 SqlMapper.SetTypeMap(
     typeof(RegulatorDto),
@@ -51,14 +46,21 @@ SqlMapper.SetTypeMap(
 
 
 // Call the RegisterTypes method to register your custom services
-Compliance_Services.Register.RegisterTypes(builder.Services);
-Compliance_Repository.Register.RegisterTypes(builder.Services);
-
+Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
+Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 // Add services to the container.
 
 
 
 builder.Services.AddControllers();
+
+//builder.Services.AddControllers(options =>
+//{
+//    var policy = new AuthorizationPolicyBuilder()
+//        .RequireAuthenticatedUser()
+//        .Build();
+//    options.Filters.Add(new AuthorizeFilter(policy)); // Global [Authorize]
+//});
 
 // ✅ Add Swagger with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
