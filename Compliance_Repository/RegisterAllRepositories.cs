@@ -1,4 +1,6 @@
 ﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Repository.Agencies;
+using Compliance_Repository.Policies;
 using Compliance_Repository.RbiNotifications;
 using Compliance_Repository.Regulator;
 using Compliance_Repository.User;
@@ -22,6 +24,8 @@ namespace Compliance_Repository
             services.AddScoped<ICertificationRepository, CertificationRepository>();
             services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
             services.AddScoped< IRbiNotificationRepository,RbiNotificationRepository>();
+            services.AddScoped< IAgenciesRepository,AgenciesRepository>();
+            services.AddScoped<IPolicyRepository,PolicyRepository>();
 
         }
     }
