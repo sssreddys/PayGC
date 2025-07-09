@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DocumentFormat.OpenXml.Wordprocessing;
+using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
 namespace Compliance_Dtos.Auth
@@ -39,8 +40,8 @@ namespace Compliance_Dtos.Auth
         [RegularExpression("^(MALE|FEMALE|OTHER)$", ErrorMessage = "Gender must be MALE, FEMALE, or OTHER")]
         public string Gender { get; set; }
 
-        public IFormFile? ProfileImage { get; set; }   // ✅ Used in controller
-        public string? AddedBy { get; set; }
+        public IFormFile? ProfileImage { get; set; }
+        //public string? AddedBy { get; set; }
     }
 
 }

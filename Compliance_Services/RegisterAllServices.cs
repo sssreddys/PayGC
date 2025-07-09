@@ -2,7 +2,7 @@
 using Compliance_Services.RbiNotifications;
 using Compliance_Services.Regulator;
 using Compliance_Services.User;
-using Compliance_Services.AuditedFincancial;
+using Compliance_Services.AuditedAndTemplate;
 using Compliance_Services.BoardResolution;
 using Microsoft.Extensions.DependencyInjection;
 using System;
