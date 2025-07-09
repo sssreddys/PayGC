@@ -1,11 +1,11 @@
-﻿using Compliance_Dtos.AuditedFinancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Compliance_Services.AuditedFincancial
+namespace Compliance_Services.AuditedAndTemplate
 {
     public interface IAuditedFinancialService
     {

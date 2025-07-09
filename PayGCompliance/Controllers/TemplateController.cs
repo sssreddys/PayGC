@@ -1,5 +1,5 @@
-﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Services.AuditedFincancial;
+﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
