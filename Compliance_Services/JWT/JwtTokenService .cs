@@ -23,8 +23,10 @@ namespace Compliance_Services.JWT
             new Claim(ClaimTypes.NameIdentifier, user.UserId),
             new Claim(ClaimTypes.Name, user.FullName ?? ""),
             new Claim(ClaimTypes.Email, user.Email ?? ""),
-            new Claim(ClaimTypes.Role, user.Role ?? "")
-        };
+            new Claim(ClaimTypes.Role, user.Role ?? ""),
+            new Claim("role_id", user.RoleId.ToString()) // ✅ Custom claim
+
+           };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

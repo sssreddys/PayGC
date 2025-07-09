@@ -11,39 +11,56 @@ namespace Compliance_Services.User
         private readonly PasswordHasher<object> _hasher = new PasswordHasher<object>();
         private readonly ILogger<UserService> _logger;
 
+        // 🖼️ Extract image bytes into a separate variable
+        byte[]? profileImageBytes = null;
         public UserService(IUserRepository repo, ILogger<UserService> logger)
         {
             _repo = repo;
             _logger = logger;
         }
 
-        public async Task<string> RegisterUserAsync(RegisterUserDto dto, byte[]? profileImageBytes)
+        public async Task<string> RegisterUserAsync(RegisterUserDto dto, string? addedBy)
         {
             _logger.LogInformation("Registering user with Email: {Email}", dto.Email);
 
             try
             {
-                // Hash the plain-text password
-                dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
+                // 🧼 Trim input strings
+                dto.FirstName = dto.FirstName?.Trim();
+                dto.LastName = dto.LastName?.Trim();
+                dto.Email = dto.Email?.Trim();
+                dto.PhoneNumber = dto.PhoneNumber?.Trim();
+                dto.Designation = dto.Designation?.Trim();
+                dto.Location = dto.Location?.Trim();
+                dto.Description = dto.Description?.Trim();
+                dto.Gender = dto.Gender?.Trim();
 
-                // Call repository and return the custom user ID string (e.g., PAYGC-0001)
-                var userId = await _repo.RegisterUserAsync(dto, profileImageBytes);
-
-                if (string.IsNullOrWhiteSpace(userId))
+                byte[]? profileImageBytes = null;
+                if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
                 {
-                    _logger.LogError("Registration failed: invalid user ID returned from repository.");
-                    throw new Exception("Invalid user ID returned from database.");
+                    if (dto.ProfileImage.Length > 500 * 1024)
+                        throw new Exception("Image size must not exceed 500 KB");
+
+                    using var ms = new MemoryStream();
+                    await dto.ProfileImage.CopyToAsync(ms);
+                    profileImageBytes = ms.ToArray();
                 }
 
-                _logger.LogInformation("User registered successfully with User ID: {UserId}", userId);
+                dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
+
+                var userId = await _repo.RegisterUserAsync(dto, profileImageBytes, addedBy);
+                if (string.IsNullOrWhiteSpace(userId))
+                    throw new Exception("Invalid user ID returned from database.");
+
                 return userId;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while registering user with Email: {Email}", dto.Email);
+                _logger.LogError(ex, "Error while registering user");
                 throw;
             }
         }
+
 
         public async Task<AuthUserDto?> GetUserByLoginInputAsync(string loginInput)
         {
@@ -88,5 +105,48 @@ namespace Compliance_Services.User
                 throw;
             }
         }
+
+
+        public async Task<IEnumerable<UserProfileDto>> GetUsersAsync(GetUsersFilterDto filter)
+        {
+            Console.WriteLine(filter);
+            return await _repo.GetUsersAsync(filter);
+        }
+
+        public async Task<string> UpdateUserAsync(string tokenUserId, UserUpdateDto dto)
+        {
+            try
+            {
+                _logger.LogInformation("Updating user profile for user ID: {UserId}", tokenUserId);
+
+                // 🔐 Hash password if new one is provided
+                if (!string.IsNullOrWhiteSpace(dto.PasswordHash))
+                {
+                    dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
+                }
+
+                // 🖼️ Convert IFormFile to byte[] if provided
+                if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
+                {
+                    if (dto.ProfileImage.Length > 500 * 1024)
+                        throw new Exception("Image size must not exceed 500 KB");
+
+                    using var ms = new MemoryStream();
+                    await dto.ProfileImage.CopyToAsync(ms);
+                    profileImageBytes = ms.ToArray();
+                }
+
+                var result = await _repo.UpdateUserAsync(tokenUserId, tokenUserId, dto,profileImageBytes);
+
+                _logger.LogInformation("User profile updated successfully for user ID: {UserId}", tokenUserId);
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating user with ID: {UserId}", tokenUserId);
+                throw;
+            }
+        }
+
     }
 }

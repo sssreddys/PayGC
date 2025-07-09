@@ -1,16 +1,9 @@
-﻿using Compliance_Dtos.AuditedFinancial;
-using Compliance_Dtos.Regulator;
-using Compliance_Repository.User;
-using Compliance_Services.AuditedFincancial;
+﻿using Compliance_Dtos.Regulator;
 using Compliance_Services.JWT;
-using Compliance_Services.User;
-using Compliance_Services.VolumesValues;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using PayGCompliance.Common;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
@@ -59,12 +52,9 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 // 🧱 Dependency Injection
-
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 //builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
 //builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
-
-
 
 SqlMapper.SetTypeMap(
     typeof(RegulatorDto),
@@ -95,11 +85,21 @@ SqlMapper.SetTypeMap(
 Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
 Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 
+Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
+Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 // Add services to the container.
 
 
 
 builder.Services.AddControllers();
+
+//builder.Services.AddControllers(options =>
+//{
+//    var policy = new AuthorizationPolicyBuilder()
+//        .RequireAuthenticatedUser()
+//        .Build();
+//    options.Filters.Add(new AuthorizeFilter(policy)); // Global [Authorize]
+//});
 
 // ✅ Add Swagger with JWT Bearer support
 builder.Services.AddEndpointsApiExplorer();
