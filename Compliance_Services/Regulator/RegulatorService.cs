@@ -1,4 +1,4 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.Regulator;
 using Compliance_Repository.Regulator;
 using System;
 using System.Collections.Generic;
@@ -33,6 +33,9 @@ namespace Compliance_Services.Regulator
             return await _repository.UpdateAsync(regulator);
         }
 
-        public async Task<bool> DeleteAsync(int id) => await _repository.DeleteAsync(id);
+        public async Task<bool> DeleteAsync(int id, string performedBy)
+        {
+            return await _repository.DeleteAsync(id, performedBy);
+        }
     }
 }

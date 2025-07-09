@@ -5,7 +5,7 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Compliance_Dtos
+namespace Compliance_Dtos.Regulator
 {
     public class RegulatorDto
     {
@@ -17,5 +17,7 @@ namespace Compliance_Dtos
         public string MobileNumber { get; set; }
         public string Email { get; set; }
         public string ContactAddress { get; set; }
+        public string Status { get; set; }
+        public string CreatedBy { get; set; }
     }
 }

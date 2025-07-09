@@ -1,10 +1,17 @@
-﻿using Compliance_Dtos;
+﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Dtos.Regulator;
+using Compliance_Repository.User;
+using Compliance_Services.AuditedFincancial;
+using Compliance_Dtos;
 using Compliance_Services.JWT;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using PayGCompliance.Common;
+using System.Globalization;
 using System.Text;
+using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,24 +35,61 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateLifetime = true,
             ClockSkew = TimeSpan.Zero
         };
+        opts.Events = new JwtBearerEvents
+        {
+            OnChallenge = context =>
+            {
+                context.HandleResponse(); // Suppress the default response
+
+                context.Response.StatusCode = 401;
+                context.Response.ContentType = "application/json";
+
+                var result = JsonSerializer.Serialize(new
+                {
+                    success=false,
+                    message = "Unauthorized"
+                });
+
+                return context.Response.WriteAsync(result);
+            }
+
+        };
     });
 
 // 🧱 Dependency Injection
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+//builder.Services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
+//builder.Services.AddScoped<IAuditedFinancialService, AuditedFinancialService>();
 
 SqlMapper.SetTypeMap(
     typeof(RegulatorDto),
     new CustomPropertyTypeMap(
         typeof(RegulatorDto),
-        (type, columnName) => type.GetProperties()
-            .FirstOrDefault(prop =>
-                prop.Name.Equals(columnName.Replace("_", ""), StringComparison.OrdinalIgnoreCase)
-            )
+        (type, columnName) =>
+        {
+            // Remove 'rg_' prefix
+            if (columnName.StartsWith("rg_"))
+                columnName = columnName.Substring(3);
+
+            // Convert snake_case to PascalCase
+            string pascalCaseName = CultureInfo.CurrentCulture.TextInfo.ToTitleCase(
+                columnName.Replace("_", " ")
+            ).Replace(" ", "");
+
+            // Find matching property
+            return type.GetProperties()
+                       .FirstOrDefault(prop =>
+                           prop.Name.Equals(pascalCaseName, StringComparison.OrdinalIgnoreCase));
+        }
     )
 );
 
 
+
 // Call the RegisterTypes method to register your custom services
+Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
+Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
+
 Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
 Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 // Add services to the container.

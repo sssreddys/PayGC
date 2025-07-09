@@ -1,4 +1,6 @@
-﻿using Compliance_Repository.Regulator;
+﻿using Compliance_Dtos.AuditedFinancial;
+using Compliance_Repository.RbiNotifications;
+using Compliance_Repository.Regulator;
 using Compliance_Repository.User;
 using Microsoft.Extensions.DependencyInjection;
 using System;
@@ -15,6 +17,10 @@ namespace Compliance_Repository
         {
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IRegulatorRepository, RegulatorRepository>();
+            services.AddScoped<IVolumesValuesRepository, VolumesValuesRepository>();
+            services.AddScoped<IBoardResolutionRepository, BoardResolutionRepository>();
+            services.AddScoped<IAuditedFinancialRepository, AuditedFinancialRepository>();
+            services.AddScoped< IRbiNotificationRepository,RbiNotificationRepository>();
 
         }
     }
