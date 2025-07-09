@@ -1,14 +1,13 @@
-﻿using Compliance_Dtos.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
-namespace Compliance_Dtos.AuditedFinancial
+namespace Compliance_Dtos.Common
 {
-    public class AuditedFinancialDto
+    public class ListBaseDto
     {
         public int Id { get; set; }
         [JsonConverter(typeof(JsonDateConverter))]
@@ -30,5 +29,6 @@ namespace Compliance_Dtos.AuditedFinancial
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime? UpdatedAt { get; set; }
         public string CreatedBy { get; set; }
+
     }
 }

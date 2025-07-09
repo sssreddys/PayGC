@@ -18,11 +18,11 @@ namespace Compliance_Services.AuditedFincancial
             _repository = repository;
         }
 
-        public Task<int> CreateAsync(CreateAuditedFinancialDto dto, byte[]? documentBytes, string controller,string created_by) => _repository.CreateAsync(dto, documentBytes, controller, created_by);
-        public Task<AuditedFinancialDto> GetByIdAsync(int id, string controller) => _repository.GetByIdAsync(id, controller);
-        public Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedFinancialDto dto, string updatedBy, string controller) => _repository.UpdateAsync( documentBytes, dto, updatedBy, controller);
+        public Task<int> CreateAsync(CreateAuditedTemplateDto dto, byte[]? documentBytes, string controller,string created_by) => _repository.CreateAsync(dto, documentBytes, controller, created_by);
+        public Task<AuditedTemplateListDto> GetByIdAsync(int id, string controller) => _repository.GetByIdAsync(id, controller);
+        public Task<int> UpdateAsync( byte[]? documentBytes, UpdateAuditedTemplateDto dto, string updatedBy, string controller) => _repository.UpdateAsync( documentBytes, dto, updatedBy, controller);
         public Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy, string controller) => _repository.DeleteAsync(dto, updatedBy, controller);
-        public Task<PagedResult<AuditedFinancialDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate, string controller)
+        public Task<PagedResult<AuditedTemplateListDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate, string controller)
         => _repository.GetPagedAsync(search, status, page, pageSize, fromDate, toDate, controller);
       
     }
