@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Compliance_Dtos.NetWorthCertificates
 {
-    public class NetWorthListDto: ListBaseDto
+    public class UpdateNetWorthDto:UpdateBaseDto
     {
         public decimal NetWorthAmount { get; set; }
         public string? BasisOfCalculation { get; set; }

@@ -1,5 +1,5 @@
-﻿using Compliance_Dtos.AuditedAndTemplate;
-using Compliance_Dtos.Certifications;
+﻿using Compliance_Dtos.Certifications;
+using Compliance_Dtos.Common;
 using System.Threading.Tasks;
 
 public interface ICertificationService

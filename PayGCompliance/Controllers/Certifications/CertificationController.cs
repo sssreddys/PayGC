@@ -1,6 +1,6 @@
-﻿using Compliance_Dtos.AuditedAndTemplate;
-using Compliance_Dtos.BoardResolution;
+﻿using Compliance_Dtos.BoardResolution;
 using Compliance_Dtos.Certifications;
+using Compliance_Dtos.Common;
 using Compliance_Services.Certifications;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
