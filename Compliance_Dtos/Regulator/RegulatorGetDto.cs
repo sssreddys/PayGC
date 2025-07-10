@@ -1,7 +1,9 @@
-﻿using System;
+﻿using Compliance_Dtos.Common;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Compliance_Dtos.Regulator
@@ -16,6 +18,8 @@ namespace Compliance_Dtos.Regulator
         public string Email { get; set; }
         public string ContactAddress { get; set; }
         public string? Status { get; set; }
+
+        [JsonConverter(typeof(JsonDateConverter))]
         public string? CreatedBy { get; set; } // Only for display in Get
     }
 }

@@ -2,6 +2,7 @@
 using Compliance_Services.Policies;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using PayGCompliance.Common;
 
 namespace PayGCompliance.Controllers
 {
@@ -19,41 +20,122 @@ namespace PayGCompliance.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPolicy([FromBody] AddPolicyDto dto)
         {
-            var newId = await _service.AddPolicyAsync(dto);
-            if (newId == -5)
-                return BadRequest(new { message = "Duplicate BR Numbers not allowed." });
+            try
+            {
+                var newId = await _service.AddPolicyAsync(dto);
 
-            return Ok(new { NewId = newId });
+                if (newId == -5)
+                {
+                    return BadRequest(ApiResponse<string>.ErrorResponse("Duplicate BR Numbers not allowed."));
+                }
+
+                return Ok(ApiResponse<int>.SuccessResponse(newId, "Policy added successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Server error: " + ex.Message));
+            }
+
         }
+
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdatePolicy(int id, [FromBody] UpdatePolicyDto dto)
         {
-            if (id != dto.Id) return BadRequest("Mismatched ID");
-            var result = await _service.UpdatePolicyAsync(dto);
-            return Ok(new { ResultCode = result });
+            try
+            {
+                if (id != dto.Id)
+                {
+                    return BadRequest(ApiResponse<string>.ErrorResponse("Mismatched ID between route and body."));
+                }
+
+                var result = await _service.UpdatePolicyAsync(dto);
+
+                if (result == -5)
+                {
+                    return BadRequest(ApiResponse<string>.ErrorResponse("Duplicate BR Numbers not allowed."));
+                }
+
+                if (result == 0)
+                {
+                    return NotFound(ApiResponse<string>.ErrorResponse("Policy not found."));
+                }
+
+                return Ok(ApiResponse<int>.SuccessResponse(result, "Policy updated successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Server error: " + ex.Message));
+            }
         }
+
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetPolicyById(int id)
         {
-            var result = await _service.GetPolicyByIdAsync(id);
-            return result is null ? NotFound() : Ok(result);
+            try
+            {
+                var result = await _service.GetPolicyByIdAsync(id);
+
+                if (result == null)
+                {
+                    return NotFound(ApiResponse<string>.ErrorResponse("Policy not found."));
+                }
+
+                return Ok(ApiResponse<GetPolicyDto>.SuccessResponse(result, "Policy fetched successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Server error: " + ex.Message));
+            }
         }
 
+
         [HttpGet]
+
         public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int size = 10, [FromQuery] string? search = null)
         {
-            var list = await _service.GetAllPoliciesAsync(page, size, search);
-            return Ok(list);
+            try
+            {
+                var policies = await _service.GetAllPoliciesAsync(page, size, search);
+
+                if (policies == null || !policies.Any())
+                {
+                    return Ok(ApiResponse<List<ListPolicyDto>>.SuccessResponse(new List<ListPolicyDto>(), "No policies found."));
+                }
+
+                return Ok(ApiResponse<List<ListPolicyDto>>.SuccessResponse((List<ListPolicyDto>)policies, "Policies fetched successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Server error: " + ex.Message));
+            }
+
         }
+
+
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
         {
-            var result = await _service.DeletePolicyAsync(id, performedBy);
-            return Ok(new { ResultCode = result });
+            try
+            {
+                var result = await _service.DeletePolicyAsync(id, performedBy);
+
+                if (result == 0)
+                {
+                    return NotFound(ApiResponse<string>.ErrorResponse("Policy not found or already deleted."));
+                }
+
+                return Ok(ApiResponse<int>.SuccessResponse(result, "Policy deleted successfully."));
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ApiResponse<string>.ErrorResponse("Server error: " + ex.Message));
+            }
         }
+
     }
 
 }
