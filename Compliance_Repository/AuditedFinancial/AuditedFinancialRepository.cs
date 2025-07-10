@@ -29,7 +29,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
         p.Add("@CreatedBy", created_by);
-        p.Add("@CreatedAt", DateTime.UtcNow);
+        p.Add("@CreatedAt", DateTime.Now);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         string spName = controller switch
@@ -78,7 +78,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@UpdatedAt", DateTime.UtcNow);
+        p.Add("@UpdatedAt", DateTime.Now);
         p.Add("@UpdatedBy", updatedBy);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
