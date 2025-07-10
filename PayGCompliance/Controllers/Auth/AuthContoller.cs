@@ -23,7 +23,7 @@ namespace PayGCompliance.Controllers.Auth
             _hasher = new PasswordHasher<object>();
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
-        [AllowAnonymous] // 👈 make sure this is allowed for anonymous users
+        [AllowAnonymous]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] RegisterUserDto dto)
@@ -50,18 +50,22 @@ namespace PayGCompliance.Controllers.Auth
                         return StatusCode(403, ApiResponse<object>.ErrorResponse("You are not authorized to register other users."));
                     }
 
-                    // ✅ Admin registering a user
+                    // Admin registering a user
                     var newUserId = await _service.RegisterUserAsync(dto, userId);
                     return Ok(ApiResponse<object>.SuccessResponse(new { user_id = newUserId }, "User registered successfully"));
                 }
 
-                // ✅ Self-registration (anonymous)
+                // Self-registration (anonymous)
                 var selfRegisteredUserId = await _service.RegisterUserAsync(dto, null);
                 return Ok(ApiResponse<object>.SuccessResponse(new { user_id = selfRegisteredUserId }, "User registered successfully"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ApiResponse<object>.ErrorResponse("Registration failed: " + ex.Message));
+                var message = ex.Message.StartsWith("Registration failed:", StringComparison.OrdinalIgnoreCase)
+                    ? ex.Message
+                    : "Registration failed: " + ex.Message;
+
+                return StatusCode(500, ApiResponse<object>.ErrorResponse(message));
             }
         }
 
@@ -84,7 +88,7 @@ namespace PayGCompliance.Controllers.Auth
 
                 if (user == null)
                 {
-                    return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid login credentials"));
+                    return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid login credentials."));
                 }
 
                 if (user.Status == 0)
@@ -95,7 +99,7 @@ namespace PayGCompliance.Controllers.Auth
                 var result = _hasher.VerifyHashedPassword(null, user.PasswordHash, dto.Password);
                 if (result != PasswordVerificationResult.Success)
                 {
-                    return Unauthorized(ApiResponse<object>.ErrorResponse("Incorrect password"));
+                    return Unauthorized(ApiResponse<object>.ErrorResponse("Incorrect password."));
                 }
 
                 var token = _jwtTokenService.GenerateToken(user);
@@ -109,14 +113,21 @@ namespace PayGCompliance.Controllers.Auth
                     token
                 };
 
-                return Ok(ApiResponse<object>.SuccessResponse(response, "Login successful"));
+                return Ok(ApiResponse<object>.SuccessResponse(response, "Login successful."));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Login failed for input: {LoginInput}", dto.LoginInput);
-                return StatusCode(500, ApiResponse<object>.ErrorResponse("Login failed: " + ex.Message));
+
+                // 🧼 Remove duplicate "Login failed: " prefix if already present
+                var errorMessage = ex.Message.StartsWith("Login failed:", StringComparison.OrdinalIgnoreCase)
+                    ? ex.Message
+                    : "Login failed: " + ex.Message;
+
+                return StatusCode(500, ApiResponse<object>.ErrorResponse(errorMessage));
             }
         }
+
 
     }
 }
