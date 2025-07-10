@@ -14,10 +14,11 @@ namespace PayGCompliance.Controllers.UserProfile
     public class UserProfile : Controller
     {
         private readonly IUserService _userService;
-
-        public UserProfile(IUserService userService)
+        private readonly ILogger<UserProfile> _logger;
+        public UserProfile(IUserService userService, ILogger<UserProfile> logger)
         {
             _userService = userService;
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         [HttpPost("profile")]
@@ -80,30 +81,55 @@ namespace PayGCompliance.Controllers.UserProfile
 
 
 
+        [Authorize]
         [HttpPost("update")]
-        public async Task<IActionResult> UpdateUser([FromBody] UserUpdateDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDto dto)
         {
-            // Extract user_id from JWT token claims
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleId = User.FindFirst("role_id")?.Value;
 
-            if (string.IsNullOrEmpty(userId))
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleId))
             {
-                return Unauthorized("User ID not found in token.");
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
+            }
+
+            bool isAdmin = roleId == ((int)UserRole.Admin).ToString() || roleId == ((int)UserRole.SuperAdmin).ToString();
+
+            string targetUserId;
+
+            if (!string.IsNullOrWhiteSpace(dto.UserId) && dto.UserId != tokenUserId)
+            {
+                if (!isAdmin)
+                {
+                    return StatusCode(403, ApiResponse<object>.ErrorResponse("You are not authorized to update other users."));
+                }
+
+                // Admin or SuperAdmin updating someone else
+                targetUserId = dto.UserId!;
+            }
+            else
+            {
+                // Self-update
+                targetUserId = tokenUserId;
             }
 
             try
             {
-                var message = await _userService.UpdateUserAsync(userId, dto);
-                return Ok(new { message, user_id = userId });
+                var message = await _userService.UpdateUserAsync(tokenUserId, targetUserId, dto);
+                return Ok(ApiResponse<object>.SuccessResponse(new { message, user_id = targetUserId }, "User updated successfully."));
             }
-            catch (SqlException ex)
+            catch (SqlException sqlEx)
             {
-                return BadRequest(new { error = ex.Message });
+                _logger.LogError(sqlEx, "SQL error during profile update for user {UserId}", targetUserId);
+                return BadRequest(ApiResponse<object>.ErrorResponse($"Database error: {sqlEx.Message}"));
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError(ex, "Unexpected error during profile update for user {UserId}", targetUserId);
+                return StatusCode(500, ApiResponse<object>.ErrorResponse($"Update failed: {ex.Message}"));
             }
         }
+
     }
 }

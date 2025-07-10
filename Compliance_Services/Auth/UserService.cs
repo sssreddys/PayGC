@@ -11,7 +11,6 @@ namespace Compliance_Services.User
         private readonly PasswordHasher<object> _hasher = new PasswordHasher<object>();
         private readonly ILogger<UserService> _logger;
 
-        // 🖼️ Extract image bytes into a separate variable
         byte[]? profileImageBytes = null;
         public UserService(IUserRepository repo, ILogger<UserService> logger)
         {
@@ -25,7 +24,7 @@ namespace Compliance_Services.User
 
             try
             {
-                // 🧼 Trim input strings
+
                 dto.FirstName = dto.FirstName?.Trim();
                 dto.LastName = dto.LastName?.Trim();
                 dto.Email = dto.Email?.Trim();
@@ -49,9 +48,6 @@ namespace Compliance_Services.User
                 dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
 
                 var userId = await _repo.RegisterUserAsync(dto, profileImageBytes, addedBy);
-                if (string.IsNullOrWhiteSpace(userId))
-                    throw new Exception("Invalid user ID returned from database.");
-
                 return userId;
             }
             catch (Exception ex)
@@ -113,19 +109,20 @@ namespace Compliance_Services.User
             return await _repo.GetUsersAsync(filter);
         }
 
-        public async Task<string> UpdateUserAsync(string tokenUserId, UserUpdateDto dto)
+        public async Task<string> UpdateUserAsync(string targetUserId, string updatedBy, UserUpdateDto dto)
         {
             try
             {
-                _logger.LogInformation("Updating user profile for user ID: {UserId}", tokenUserId);
+                _logger.LogInformation("Updating user {TargetUserId} by {UpdatedBy}", targetUserId, updatedBy);
 
-                // 🔐 Hash password if new one is provided
+                // 🔐 Hash password if changed
                 if (!string.IsNullOrWhiteSpace(dto.PasswordHash))
                 {
                     dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
                 }
 
-                // 🖼️ Convert IFormFile to byte[] if provided
+                // 🖼️ Convert image
+                byte[]? profileImageBytes = null;
                 if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
                 {
                     if (dto.ProfileImage.Length > 500 * 1024)
@@ -136,17 +133,16 @@ namespace Compliance_Services.User
                     profileImageBytes = ms.ToArray();
                 }
 
-                var result = await _repo.UpdateUserAsync(tokenUserId, tokenUserId, dto,profileImageBytes);
+                var result = await _repo.UpdateUserAsync(targetUserId, updatedBy, dto, profileImageBytes);
 
-                _logger.LogInformation("User profile updated successfully for user ID: {UserId}", tokenUserId);
+                _logger.LogInformation("Update successful for user {TargetUserId}", targetUserId);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while updating user with ID: {UserId}", tokenUserId);
+                _logger.LogError(ex, "Update failed for user {TargetUserId}", targetUserId);
                 throw;
             }
         }
-
     }
 }
