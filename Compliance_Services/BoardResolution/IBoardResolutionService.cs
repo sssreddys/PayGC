@@ -1,5 +1,5 @@
-﻿using Compliance_Dtos.AuditedAndTemplate;
-using Compliance_Dtos.BoardResolution;
+﻿using Compliance_Dtos.BoardResolution;
+using Compliance_Dtos.Common;
 
 public interface IBoardResolutionService
 {
