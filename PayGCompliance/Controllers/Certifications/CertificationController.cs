@@ -33,7 +33,7 @@ namespace PayGCompliance.Controllers.Certifications
                 return Ok(new ApiResponse<PagedResult<CertificationDto>>
                 {
                     Success = true,
-                    Message = "Certifications fetched successfully.",
+                    Message = "Certifications Fetched Successfully.",
                     Data = result
                 });
             }
@@ -59,7 +59,7 @@ namespace PayGCompliance.Controllers.Certifications
                     return NotFound(new ApiResponse<CertificationDto>
                     {
                         Success = false,
-                        Message = "Certification not found.",
+                        Message = "Certification Not Found.",
                         Data = null
                     });
                 }
@@ -67,7 +67,7 @@ namespace PayGCompliance.Controllers.Certifications
                 return Ok(new ApiResponse<CertificationDto>
                 {
                     Success = true,
-                    Message = "Certification found.",
+                    Message = "Certification Found.",
                     Data = dto
                 });
             }
@@ -95,7 +95,7 @@ namespace PayGCompliance.Controllers.Certifications
                 return Ok(new ApiResponse<int>
                 {
                     Success = true,
-                    Message = "Certification created successfully.",
+                    Message = "Certification Created Successfully.",
                     Data = id
                 });
             }
@@ -133,7 +133,7 @@ namespace PayGCompliance.Controllers.Certifications
                     return NotFound(new ApiResponse<object>
                     {
                         Success = false,
-                        Message = "Certification not found.",
+                        Message = "Certification Not Found.",
                         Data = null
                     });
                 }
@@ -141,7 +141,7 @@ namespace PayGCompliance.Controllers.Certifications
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Certification updated successfully.",
+                    Message = "Certification Updated Successfully.",
                     Data = null
                 });
             }
@@ -175,7 +175,7 @@ namespace PayGCompliance.Controllers.Certifications
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
-                    Message = "Certification deleted successfully.",
+                    Message = "Certification Deleted Successfully.",
                     Data = null
                 });
             }
