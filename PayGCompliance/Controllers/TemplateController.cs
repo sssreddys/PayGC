@@ -11,7 +11,7 @@ namespace PayGCompliance.Controllers
 
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/template")]
 
     public class TemplateController :ControllerBase
     {
@@ -72,7 +72,7 @@ namespace PayGCompliance.Controllers
         }
 
 
-        [HttpGet("audited-financialsPaged")]
+        [HttpGet("templates_paged")]
         public async Task<IActionResult> GetAuditedFinancialsAsync(
          [FromQuery(Name = "id")] int? auditedFinancialId,
          [FromQuery(Name = "search")] string? searchKeyword,
