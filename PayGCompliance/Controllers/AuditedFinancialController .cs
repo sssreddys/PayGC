@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 [Authorize]
 [ApiController]
-[Route("api/[controller]")]
+[Route("api/audited_financial")]
 public class AuditedFinancialController : ControllerBase
 {
     private readonly IAuditedFinancialService _service;
@@ -66,7 +66,7 @@ public class AuditedFinancialController : ControllerBase
     }
 
 
-    [HttpGet("audited-financialsPaged")]
+    [HttpGet("audited_financial_paged")]
     public async Task<IActionResult> GetAuditedFinancialsAsync(
      [FromQuery(Name = "id")] int? auditedFinancialId,
      [FromQuery(Name = "search")] string? searchKeyword,
@@ -98,7 +98,11 @@ public class AuditedFinancialController : ControllerBase
             this.controller_name
         );
 
-        return Ok(paginatedResult);
+        return Ok(new
+        {
+            success = true,
+            data= paginatedResult
+        });
     }
 
 
@@ -109,16 +113,19 @@ public class AuditedFinancialController : ControllerBase
 
         try
         {
-            byte[]? documentBytes = null;
+            byte[]? documentBytes = null;   
             var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-            var hfc = HttpContext.Request.Form.Files;
-            var hpf = hfc[0]; 
-            MemoryStream memory = new();
-            hpf.CopyTo(memory);
-            documentBytes = memory.ToArray();
+            if (Request.Form.Files.Count > 0)
+            {
+                var hpf = Request.Form.Files[0]; // safely get the uploaded file
+
+                using var memory = new MemoryStream();
+                hpf.CopyTo(memory);
+                documentBytes = memory.ToArray();
+            }
             var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy, this.controller_name);
             if (updated==-1) return NotFound();
             return Ok(new
