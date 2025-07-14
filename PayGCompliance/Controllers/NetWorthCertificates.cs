@@ -10,7 +10,7 @@ namespace PayGCompliance.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/networt_certificate")]
 
     public class NetWorthCertificatesController : ControllerBase
     {
