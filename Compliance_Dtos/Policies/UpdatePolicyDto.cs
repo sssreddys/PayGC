@@ -20,8 +20,7 @@ namespace Compliance_Dtos.Policies
         public DateTime? ReviewedDate { get; set; }
         public string ApprovedBy { get; set; }
         public DateTime? ApprovedDate { get; set; }
-        public bool Status { get; set; }
-        public string UpdatedBy { get; set; }
+        public string PerformedBy { get; set; }
     }
 
 }

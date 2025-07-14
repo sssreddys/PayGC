@@ -55,8 +55,8 @@ namespace Compliance_Repository.Policies
             parameters.Add("@ReviewedDate", dto.ReviewedDate);
             parameters.Add("@ApprovedBy", dto.ApprovedBy);
             parameters.Add("@ApprovedDate", dto.ApprovedDate);
-            parameters.Add("@Status", dto.Status);
-            parameters.Add("@UpdatedBy", dto.UpdatedBy);
+            parameters.Add("@PerformedBy", dto.PerformedBy);
+
 
             return await _db.ExecuteScalarAsync<int>("sp_update_policy", parameters, commandType: CommandType.StoredProcedure);
         }
