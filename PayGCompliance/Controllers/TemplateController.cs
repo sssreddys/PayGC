@@ -1,4 +1,5 @@
 ﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Dtos.Common;
 using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ namespace PayGCompliance.Controllers
 
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/template")]
 
     public class TemplateController :ControllerBase
     {
@@ -71,7 +72,7 @@ namespace PayGCompliance.Controllers
         }
 
 
-        [HttpGet("audited-financialsPaged")]
+        [HttpGet("templates_paged")]
         public async Task<IActionResult> GetAuditedFinancialsAsync(
          [FromQuery(Name = "id")] int? auditedFinancialId,
          [FromQuery(Name = "search")] string? searchKeyword,
@@ -89,7 +90,11 @@ namespace PayGCompliance.Controllers
                 if (financialRecord == null)
                     return NotFound(new { message = "Record not found." });
 
-                return Ok(financialRecord);
+                return Ok(new
+                {
+                    success = true,
+                    data = financialRecord
+                });
             }
 
             // Else, return paginated and filtered results

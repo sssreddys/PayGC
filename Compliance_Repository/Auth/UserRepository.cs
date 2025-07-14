@@ -22,7 +22,7 @@ namespace Compliance_Repository.User
                 CommandType = CommandType.StoredProcedure
             };
 
-            // ✅ Input parameters (trimmed and null-safe)
+            // Input parameters
             command.Parameters.AddWithValue("@first_name", dto.FirstName?.Trim() ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@last_name", dto.LastName?.Trim() ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("@email", dto.Email?.Trim() ?? (object)DBNull.Value);
@@ -31,26 +31,21 @@ namespace Compliance_Repository.User
             command.Parameters.AddWithValue("@location", string.IsNullOrWhiteSpace(dto.Location) ? DBNull.Value : dto.Location.Trim());
             command.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(dto.Description) ? DBNull.Value : dto.Description.Trim());
             command.Parameters.AddWithValue("@password_hash", dto.PasswordHash ?? (object)DBNull.Value);
-            command.Parameters.AddWithValue("@role_id", dto.RoleId);
+            command.Parameters.AddWithValue("@role_id", (object?)dto.RoleId ?? DBNull.Value);
             command.Parameters.AddWithValue("@gender", string.IsNullOrWhiteSpace(dto.Gender) ? "MALE" : dto.Gender.Trim());
             command.Parameters.AddWithValue("@added_by", string.IsNullOrWhiteSpace(addedBy) ? DBNull.Value : addedBy);
 
-            // ✅ Image parameter with SqlDbType
+            // Image
             var imageParam = new SqlParameter("@profile_image", SqlDbType.VarBinary)
             {
                 Value = profileImageBytes ?? (object)DBNull.Value
             };
             command.Parameters.Add(imageParam);
 
-            // ✅ Output parameters
-            var successParam = new SqlParameter("@Success", SqlDbType.Bit)
-            {
-                Direction = ParameterDirection.Output
-            };
-            var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000)
-            {
-                Direction = ParameterDirection.Output
-            };
+            // Output parameters
+            var successParam = new SqlParameter("@Success", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000) { Direction = ParameterDirection.Output };
+
             command.Parameters.Add(successParam);
             command.Parameters.Add(errorMessageParam);
 
@@ -63,7 +58,6 @@ namespace Compliance_Repository.User
                 if (await reader.ReadAsync())
                 {
                     registeredUserId = reader["user_id"]?.ToString();
-                    // Optionally read other returned fields if needed
                 }
             }
 
@@ -254,49 +248,56 @@ namespace Compliance_Repository.User
 
         public async Task<string> UpdateUserAsync(string targetUserId, string updatedBy, UserUpdateDto dto, byte[]? profileImageBytes)
         {
-            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
-            using var command = new SqlCommand("sp_update_user", connection)
+            await using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            await using var command = new SqlCommand("sp_update_user", connection)
             {
                 CommandType = CommandType.StoredProcedure
             };
 
-            // Inputs
-            command.Parameters.AddWithValue("@user_id", targetUserId);
-            command.Parameters.AddWithValue("@updated_by", updatedBy);
-            command.Parameters.AddWithValue("@first_name", (object?)dto.FirstName ?? DBNull.Value);
-            command.Parameters.AddWithValue("@last_name", (object?)dto.LastName ?? DBNull.Value);
-            command.Parameters.AddWithValue("@email", (object?)dto.Email ?? DBNull.Value);
-            command.Parameters.AddWithValue("@phone_number", (object?)dto.PhoneNumber ?? DBNull.Value);
-            command.Parameters.AddWithValue("@designation", (object?)dto.Designation ?? DBNull.Value);
-            command.Parameters.AddWithValue("@location", (object?)dto.Location ?? DBNull.Value);
-            command.Parameters.AddWithValue("@description", (object?)dto.Description ?? DBNull.Value);
-            command.Parameters.AddWithValue("@password_hash", (object?)dto.PasswordHash ?? DBNull.Value);
+            // Required parameters
+            command.Parameters.AddWithValue("@user_id", string.IsNullOrWhiteSpace(targetUserId) ? throw new ArgumentException("UserId required") : targetUserId.Trim());
+            command.Parameters.AddWithValue("@updated_by", string.IsNullOrWhiteSpace(updatedBy) ? throw new ArgumentException("UpdatedBy required") : updatedBy.Trim());
+
+            // Trimmed and null-safe string inputs
+            command.Parameters.AddWithValue("@first_name", string.IsNullOrWhiteSpace(dto.FirstName) ? DBNull.Value : dto.FirstName.Trim());
+            command.Parameters.AddWithValue("@last_name", string.IsNullOrWhiteSpace(dto.LastName) ? DBNull.Value : dto.LastName.Trim());
+            command.Parameters.AddWithValue("@email", string.IsNullOrWhiteSpace(dto.Email) ? DBNull.Value : dto.Email.Trim());
+            command.Parameters.AddWithValue("@phone_number", string.IsNullOrWhiteSpace(dto.PhoneNumber) ? DBNull.Value : dto.PhoneNumber.Trim());
+            command.Parameters.AddWithValue("@designation", string.IsNullOrWhiteSpace(dto.Designation) ? DBNull.Value : dto.Designation.Trim());
+            command.Parameters.AddWithValue("@location", string.IsNullOrWhiteSpace(dto.Location) ? DBNull.Value : dto.Location.Trim());
+            command.Parameters.AddWithValue("@description", string.IsNullOrWhiteSpace(dto.Description) ? DBNull.Value : dto.Description.Trim());
+            command.Parameters.AddWithValue("@password_hash", string.IsNullOrWhiteSpace(dto.PasswordHash) ? DBNull.Value : dto.PasswordHash.Trim());
+
+            // Role & status (nullable ints)
             command.Parameters.AddWithValue("@role_id", (object?)dto.RoleId ?? DBNull.Value);
-            command.Parameters.AddWithValue("@gender", (object?)dto.Gender ?? DBNull.Value);
-            command.Parameters.Add("@profile_image", SqlDbType.VarBinary).Value =
-                profileImageBytes != null && profileImageBytes.Length > 0 ? (object)profileImageBytes : DBNull.Value;
             command.Parameters.AddWithValue("@status", (object?)dto.Status ?? DBNull.Value);
 
-            // Outputs
-            var successParam = new SqlParameter("@Success", SqlDbType.Bit)
-            {
-                Direction = ParameterDirection.Output
-            };
-            var errorMsgParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000)
-            {
-                Direction = ParameterDirection.Output
-            };
-            command.Parameters.Add(successParam);
-            command.Parameters.Add(errorMsgParam);
+            // Gender: default fallback
+            command.Parameters.AddWithValue("@gender", string.IsNullOrWhiteSpace(dto.Gender) ? "MALE" : dto.Gender.Trim());
 
+            // Profile image
+            var imageParam = new SqlParameter("@profile_image", SqlDbType.VarBinary)
+            {
+                Value = profileImageBytes?.Length > 0 ? (object)profileImageBytes : DBNull.Value
+            };
+            command.Parameters.Add(imageParam);
+
+            // Output parameters
+            var successParam = new SqlParameter("@Success", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var errorParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000) { Direction = ParameterDirection.Output };
+            command.Parameters.Add(successParam);
+            command.Parameters.Add(errorParam);
+
+            // Execute
             await connection.OpenAsync();
             await command.ExecuteNonQueryAsync();
 
-            var success = successParam.Value != DBNull.Value && (bool)successParam.Value;
-            var errorMessage = errorMsgParam.Value?.ToString();
+            // Evaluate result
+            bool success = successParam.Value is bool b && b;
+            string? errorMsg = errorParam.Value?.ToString();
 
             if (!success)
-                throw new Exception(errorMessage ?? "User update failed.");
+                throw new Exception(errorMsg ?? "Update failed.");
 
             return "User updated successfully.";
         }

@@ -21,7 +21,8 @@ namespace Compliance_Dtos.Certifications
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime? ExpiryDate { get; set; }
 
-        public byte[] BrDocument { get; set; }
+        public string BrDocument { get; set; }
+
 
         public string BrNumbers { get; set; }
 
@@ -35,7 +36,7 @@ namespace Compliance_Dtos.Certifications
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime? ApprovedDate { get; set; }
 
-        public byte[] AttachedCertificate { get; set; }
+        public byte[]? AttachedCertificate { get; set; }
 
         public string CreatedBy { get; set; }
 
