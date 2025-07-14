@@ -14,9 +14,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Compliance_Dtos\Compliance_Dtos.csproj" />
-    <ProjectReference Include="..\Compliance_models\Compliance_models.csproj" />
+    <ProjectReference Include="..\Compliance_models\Compliance_Models.csproj" />
     <ProjectReference Include="..\Compliance_Repository\Compliance_Repository.csproj" />
     <ProjectReference Include="..\Compliance_Services\Compliance_Services.csproj" />
+    <ProjectReference Include="..\Compliance_Common\Compliance_Common.csproj" />
   </ItemGroup>
 
 </Project>

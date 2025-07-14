@@ -1,4 +1,4 @@
-﻿namespace PayGCompliance.Common
+﻿namespace Compliance_Common
 {
     public enum UserRole
     {
@@ -6,5 +6,4 @@
         Admin = 2,
         User = 3
     }
-
 }
