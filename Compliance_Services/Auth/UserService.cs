@@ -178,5 +178,16 @@ namespace Compliance_Services.User
             }
         }
 
+        public async Task<string> DeleteUserAsync(string targetUserId, string deletedBy)
+        {
+            var (success, message) = await _repo.DeleteUserAsync(targetUserId, deletedBy);
+
+            if (!success)
+                throw new ArgumentException(message ?? "Deletion failed.");
+
+            return message ?? "User deleted successfully.";
+        }
+
+
     }
 }

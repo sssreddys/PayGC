@@ -138,6 +138,57 @@ namespace PayGCompliance.Controllers.UserProfile
             }
         }
 
+        [HttpDelete("delete")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> DeleteUser([FromForm] DeleteUserDto dto)
+        {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleIdClaim = User.FindFirst("role_id")?.Value;
+
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleIdClaim))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
+
+            if (!int.TryParse(roleIdClaim, out int tokenRoleId))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid role claim."));
+
+            var isAdminOrSuperAdmin = tokenRoleId == (int)UserRole.Admin || tokenRoleId == (int)UserRole.SuperAdmin;
+            var targetUserId = dto.UserId?.Trim();
+
+            if (string.IsNullOrWhiteSpace(targetUserId))
+                return BadRequest(ApiResponse<object>.ErrorResponse("UserId is required for deletion."));
+
+            if (targetUserId != tokenUserId && !isAdminOrSuperAdmin)
+                return Forbid("You are not authorized to delete other users.");
+
+            try
+            {
+                _logger.LogInformation("Delete request: Target={TargetUserId}, By={DeletedBy}", targetUserId, tokenUserId);
+
+                string resultMessage = await _userService.DeleteUserAsync(targetUserId, tokenUserId);
+
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    new { user_id = targetUserId, message = resultMessage },
+                    "User deleted successfully."
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during delete.");
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error during delete.");
+                return BadRequest(ApiResponse<object>.ErrorResponse("Database error: " + ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during delete.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Delete failed: " + ex.Message));
+            }
+        }
+
+
 
     }
 }

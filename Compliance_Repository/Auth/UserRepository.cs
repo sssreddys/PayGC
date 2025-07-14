@@ -303,5 +303,34 @@ namespace Compliance_Repository.User
         }
 
 
+        public async Task<(bool Success, string Message)> DeleteUserAsync(string userId, string deletedBy)
+        {
+            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            using var command = new SqlCommand("sp_delete_user", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
+
+            command.Parameters.AddWithValue("@user_id", userId);
+            command.Parameters.AddWithValue("@deleted_by", deletedBy);
+
+            var successParam = new SqlParameter("@Success", SqlDbType.Bit) { Direction = ParameterDirection.Output };
+            var errorParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000) { Direction = ParameterDirection.Output };
+
+            command.Parameters.Add(successParam);
+            command.Parameters.Add(errorParam);
+
+            await connection.OpenAsync();
+            await command.ExecuteNonQueryAsync();
+
+            bool isSuccess = successParam.Value != DBNull.Value && Convert.ToBoolean(successParam.Value);
+            string errorMessage = errorParam.Value?.ToString();
+
+            return isSuccess
+                ? (true, "User deleted successfully.")
+                : (false, errorMessage ?? "Unknown error occurred.");
+        }
+
+
     }
 }
