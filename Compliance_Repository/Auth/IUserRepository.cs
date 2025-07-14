@@ -10,6 +10,8 @@ namespace Compliance_Repository.User
         Task<IEnumerable<UserProfileDto>> GetUsersAsync(GetUsersFilterDto filter);
         Task<string> UpdateUserAsync(string userId, string updatedBy, UserUpdateDto dto, byte[]? profileImageBytes);
         Task<(bool Success, string Message)> DeleteUserAsync(string userId, string deletedBy);
+        Task<(bool Success, string Message)> ToggleUserStatusAsync(string userId, int status, string performedBy);
+
 
 
     }

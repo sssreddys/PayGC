@@ -189,6 +189,46 @@ namespace PayGCompliance.Controllers.UserProfile
         }
 
 
+        [HttpPost("toggle-status")]
+        public async Task<IActionResult> ToggleUserStatus([FromBody] UserStatusDto dto)
+        {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleIdClaim = User.FindFirst("role_id")?.Value;
+
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleIdClaim))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
+
+            if (!int.TryParse(roleIdClaim, out int tokenRoleId))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid role claim."));
+
+            if (string.IsNullOrWhiteSpace(dto?.UserId))
+                return BadRequest(ApiResponse<object>.ErrorResponse("Target user ID is required."));
+
+            if (dto.UserId == tokenUserId && dto.Status == 0)
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("You cannot deactivate yourself"));
+            try
+            {
+                _logger.LogInformation("Toggle status: Target={TargetUserId}, Status={Status}, PerformedBy={PerformedBy}",
+                    dto.UserId, dto.Status, tokenUserId);
+
+                var (success, message) = await _userService.ToggleUserStatusAsync(dto, tokenUserId);
+
+                if (!success)
+                    return Ok(ApiResponse<object>.ErrorResponse(message));
+
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    new { user_id = dto.UserId, status = dto.Status },
+                    message
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during toggle status.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Operation failed: " + ex.Message));
+            }
+        }
+
+
 
     }
 }

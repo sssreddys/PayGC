@@ -189,5 +189,26 @@ namespace Compliance_Services.User
         }
 
 
+
+        public async Task<(bool Success, string Message)> ToggleUserStatusAsync(UserStatusDto dto, string performedByUserId)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.UserId))
+                return (false, "Invalid user data.");
+
+            try
+            {
+                return await _repo.ToggleUserStatusAsync(
+                    dto.UserId.Trim(),
+                    dto.Status,
+                    performedByUserId.Trim()
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ToggleUserStatusAsync.");
+                return (false, "An unexpected error occurred.");
+            }
+        }
+
     }
 }

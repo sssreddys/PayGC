@@ -331,6 +331,52 @@ namespace Compliance_Repository.User
                 : (false, errorMessage ?? "Unknown error occurred.");
         }
 
+        public async Task<(bool Success, string Message)> ToggleUserStatusAsync(string userId, int status, string performedByUserId)
+        {
+            using var connection = new SqlConnection(_configuration.GetConnectionString("DefaultConnection"));
+            using var command = new SqlCommand("sp_toggle_user_status", connection)
+            {
+                CommandType = CommandType.StoredProcedure
+            };
 
+            // Add input parameters
+            command.Parameters.AddWithValue("@user_id", userId);
+            command.Parameters.AddWithValue("@status", status);
+            command.Parameters.AddWithValue("@performed_by", performedByUserId);
+
+            // Add output parameters
+            var successParam = new SqlParameter("@Success", SqlDbType.Bit)
+            {
+                Direction = ParameterDirection.Output
+            };
+
+            var errorMessageParam = new SqlParameter("@ErrorMessage", SqlDbType.NVarChar, 4000)
+            {
+                Direction = ParameterDirection.Output
+            };
+
+            command.Parameters.Add(successParam);
+            command.Parameters.Add(errorMessageParam);
+
+            try
+            {
+                await connection.OpenAsync();
+                await command.ExecuteNonQueryAsync();
+
+                bool success = successParam.Value != DBNull.Value && Convert.ToBoolean(successParam.Value);
+                string message = errorMessageParam.Value?.ToString() ?? "No message returned.";
+
+                return (success, message);
+            }
+            catch (SqlException ex)
+            {
+                // Log if needed
+                return (false, $"SQL error: {ex.Message}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Unexpected error: {ex.Message}");
+            }
+        }
     }
 }
