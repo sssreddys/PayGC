@@ -84,7 +84,11 @@ public class AuditedFinancialController : ControllerBase
             if (financialRecord == null)
                 return NotFound(new { message = "Record not found." });
 
-            return Ok(financialRecord);
+            return Ok(new
+            {
+                success = true,
+                data = financialRecord
+            });
         }
 
         // Else, return paginated and filtered results
@@ -98,11 +102,7 @@ public class AuditedFinancialController : ControllerBase
             this.controller_name
         );
 
-        return Ok(new
-        {
-            success = true,
-            data= paginatedResult
-        });
+        return Ok(paginatedResult);
     }
 
 

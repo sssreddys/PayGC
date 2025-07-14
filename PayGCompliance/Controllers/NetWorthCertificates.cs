@@ -91,7 +91,11 @@ namespace PayGCompliance.Controllers
                 if (financialRecord == null)
                     return NotFound(new { message = "Record not found." });
 
-                return Ok(financialRecord);
+                return Ok(new
+                {
+                    success = true,
+                    data = financialRecord
+                });
             }
 
             // Else, return paginated and filtered results
@@ -120,11 +124,14 @@ namespace PayGCompliance.Controllers
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-                var hfc = HttpContext.Request.Form.Files;
-                var hpf = hfc[0];
-                MemoryStream memory = new();
-                hpf.CopyTo(memory);
-                documentBytes = memory.ToArray();
+                if (Request.Form.Files.Count > 0)
+                {
+                    var hpf = Request.Form.Files[0]; // safely get the uploaded file
+
+                    using var memory = new MemoryStream();
+                    hpf.CopyTo(memory);
+                    documentBytes = memory.ToArray();
+                }
                 var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy);
                 if (updated == -1) return NotFound();
                 return Ok(new
