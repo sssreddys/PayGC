@@ -3,6 +3,7 @@ using Compliance_Dtos.Common;
 using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 [Authorize]
@@ -48,7 +49,7 @@ public class AuditedFinancialController : ControllerBase
                 await dto.AttachedDocument.CopyToAsync(ms);
                 documentBytes = ms.ToArray();
             }
-            var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var id = await _service.CreateAsync(dto,documentBytes, this.controller_name, created_by!);
             return Ok(new { 
@@ -113,8 +114,8 @@ public class AuditedFinancialController : ControllerBase
 
         try
         {
-            byte[]? documentBytes = null;   
-            var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            byte[]? documentBytes = null;
+            var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
 
@@ -149,7 +150,7 @@ public class AuditedFinancialController : ControllerBase
     {
         try
         {
-            var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
 
