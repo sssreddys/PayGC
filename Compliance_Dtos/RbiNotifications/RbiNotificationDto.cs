@@ -19,7 +19,7 @@ namespace Compliance_Dtos.RbiNotifications
         public DateTime? ReviewedDate { get; set; }
         public string ApprovedBy { get; set; }
         public DateTime? ApprovedDate { get; set; }
-        public IFormFile? AttachedDocument { get; set; }
+        public byte[]? AttachedDocument { get; set; }
         public int Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
