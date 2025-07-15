@@ -6,6 +6,8 @@ namespace Compliance_Dtos.Auth
 
     public class UserUpdateDto
     {
+        public string? UserId { get; set; } // ✅ Only admin/superadmin can use this
+
         [StringLength(100, MinimumLength = 1, ErrorMessage = "First name cannot be empty")]
         public string? FirstName { get; set; }
 

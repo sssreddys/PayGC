@@ -8,7 +8,7 @@ namespace Compliance_Services.User
         Task<AuthUserDto?> GetUserByLoginInputAsync(string loginInput);
         Task<UserProfileDto?> GetProfileAsync(string userId);
         Task<IEnumerable<UserProfileDto>> GetUsersAsync(GetUsersFilterDto filter);
-        Task<string> UpdateUserAsync(string tokenUserId, UserUpdateDto dto);
+        Task<string> UpdateUserAsync(string targetUserId, string updatedBy, UserUpdateDto dto);
 
     }
 
