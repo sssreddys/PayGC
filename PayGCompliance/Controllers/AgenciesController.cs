@@ -1,10 +1,14 @@
 ﻿using Compliance_Dtos.Agencies;
+using Compliance_Dtos.Common;
 using Compliance_Services.Agencies;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using PayGCompliance.Common; // Assuming ApiResponse is in this namespace
 
 namespace PayGCompliance.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/agencies")]
     public class AgenciesController : ControllerBase // Changed to ControllerBase, common for APIs
@@ -17,11 +21,24 @@ namespace PayGCompliance.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
+            [FromQuery] string? status = null
+            )
         {
-            var data = await _service.GetAllAsync(pageNumber, pageSize, searchTerm);
 
-            return Ok(new ApiResponse<IEnumerable<AgencyGetDto>> // Changed DTO type
+            if (pageNumber <= 0 || pageSize <= 0)
+            {
+                return BadRequest(ApiResponse<string>.ErrorResponse("Page number and page size must be greater than 0."));
+            }
+
+            var data = await _service.GetAllAsync(pageNumber, pageSize, searchTerm ,fromDate,toDate,status);
+
+            return Ok(new ApiResponse<PagedResult<AgencyGetDto>> // Changed DTO type
             {
                 Success = true,
                 Message = "Agencies fetched successfully.",
@@ -52,16 +69,21 @@ namespace PayGCompliance.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add([FromBody] AgencyAddDto agency) // Changed input DTO, added [FromBody]
+        public async Task<IActionResult> Add([FromBody] AgencyAddDto agency)
         {
-            // Id is not expected from client on Add, will be set by DB
-            // agency.Id = 0; // This line is not needed if you use a dedicated AgencyAddDto
+            var createdBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (string.IsNullOrEmpty(createdBy))
+            {
+                return Unauthorized(ApiResponse<string>.ErrorResponse("Invalid user token."));
+            }
+
+            agency.CreatedBy = createdBy;
 
             try
             {
                 var newAgency = await _service.AddAsync(agency);
 
-                // Use CreatedAtAction for proper REST response for resource creation
                 return CreatedAtAction(nameof(GetById), new { id = newAgency?.Id }, new ApiResponse<object>
                 {
                     Success = true,
@@ -71,7 +93,6 @@ namespace PayGCompliance.Controllers
             }
             catch (Exception ex)
             {
-                // Consider more specific exception handling for different error codes
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
@@ -81,52 +102,49 @@ namespace PayGCompliance.Controllers
             }
         }
 
+
+
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] AgencyUpdateDto agency) // Changed input DTO, added [FromBody]
+        public async Task<IActionResult> Update(int id, [FromBody] AgencyUpdateDto agency)
         {
             if (id != agency.Id)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "ID mismatch between route and body.",
-                    Data = null
-                });
-            }
+                return BadRequest(ApiResponse<object>.ErrorResponse("ID mismatch between route and body."));
+
+            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+            if (string.IsNullOrWhiteSpace(performedBy))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
+
+            agency.PerformedBy = performedBy;
 
             try
             {
                 var updatedAgency = await _service.UpdateAsync(agency);
-
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Agency updated successfully.",
-                    Data = updatedAgency
-                });
+                return Ok(ApiResponse<object>.SuccessResponse(updatedAgency, "Agency updated successfully."));
             }
             catch (Exception ex)
             {
-                // Consider more specific exception handling for different error codes
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
             }
         }
 
+
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
+                var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+
+                if (string.IsNullOrEmpty(performedBy))
+                {
+                    return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: PerformedBy not found in token."));
+                }
+
                 var result = await _service.DeleteAsync(id, performedBy);
 
                 if (!result)
                 {
-                    // More specific messages based on the exception thrown by the repository
                     return NotFound(new ApiResponse<object>
                     {
                         Success = false,
@@ -144,7 +162,6 @@ namespace PayGCompliance.Controllers
             }
             catch (Exception ex)
             {
-                // Catching specific exceptions from repository is better
                 return BadRequest(new ApiResponse<object>
                 {
                     Success = false,
@@ -153,5 +170,6 @@ namespace PayGCompliance.Controllers
                 });
             }
         }
+
     }
 }

@@ -9,7 +9,7 @@ namespace Compliance_Dtos.Regulator
 {
     public class RegulatorAddDto
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonIgnore]
         public int Id { get; set; }
         public string Name { get; set; }
         public string Address { get; set; }
@@ -17,8 +17,10 @@ namespace Compliance_Dtos.Regulator
         public string MobileNumber { get; set; }
         public string Email { get; set; }
         public string ContactAddress { get; set; }
+        [JsonIgnore]
         public string? Status { get; set; }  // Optional, default 1
-        public string CreatedBy { get; set; } // Required for Add
+        [JsonIgnore]
+        public string CreatedBy { get; set; } = string.Empty; // Required for Add
 
     }
 }

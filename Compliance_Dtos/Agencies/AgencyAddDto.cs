@@ -10,7 +10,7 @@ namespace Compliance_Dtos.Agencies
 {
     public class AgencyAddDto
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+        [JsonIgnore]    
         public int Id { get; set; }
         [Required(ErrorMessage = "Name is required.")]
         [StringLength(255, ErrorMessage = "Name cannot exceed 255 characters.")]
@@ -41,9 +41,9 @@ namespace Compliance_Dtos.Agencies
         // Status for Add operation is often defaulted or set internally,
         // but if it's user-provided on creation, keep it.
         // I'll assume it can be provided, otherwise default it in SP.
+        [JsonIgnore]
         public string? Status { get; set; }
-
-        [Required(ErrorMessage = "Created by is required.")]
+        [JsonIgnore] 
         [StringLength(255, ErrorMessage = "Created by cannot exceed 255 characters.")]
         public string CreatedBy { get; set; } = string.Empty; // User who performs the add
     }

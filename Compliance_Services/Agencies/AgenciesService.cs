@@ -1,5 +1,8 @@
 ﻿using Compliance_Dtos.Agencies;
+using Compliance_Dtos.Common;
+using Compliance_Dtos.Regulator;
 using Compliance_Repository.Agencies;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -14,9 +17,9 @@ namespace Compliance_Services.Agencies
             _repository = repository;
         }
 
-        public async Task<IEnumerable<AgencyGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
+        public async Task<PagedResult<AgencyGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm, DateTime? fromDate, DateTime? toDate, string? status)
         {
-            return await _repository.GetAllAsync(pageNumber, pageSize, searchTerm);
+            return await _repository.GetAllAsync(pageNumber, pageSize, searchTerm, fromDate, toDate, status);
         }
 
         public async Task<AgencyGetDto?> GetByIdAsync(int id) => await _repository.GetByIdAsync(id);

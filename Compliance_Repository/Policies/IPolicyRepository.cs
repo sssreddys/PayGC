@@ -1,4 +1,5 @@
-﻿using Compliance_Dtos.Policies;
+﻿using Compliance_Dtos.Common;
+using Compliance_Dtos.Policies;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,7 +13,7 @@ namespace Compliance_Repository.Policies
         Task<int> AddPolicyAsync(AddPolicyDto dto);
         Task<int> UpdatePolicyAsync(UpdatePolicyDto dto);
         Task<GetPolicyDto?> GetPolicyByIdAsync(int id);
-        Task<IEnumerable<ListPolicyDto>> GetAllPoliciesAsync(int pageNumber, int pageSize, string? searchTerm);
+        Task<PagedResult<ListPolicyDto>> GetAllPoliciesAsync(int pageNumber, int pageSize, string? searchTerm, DateTime? fromDate, DateTime? toDate, string? status);
         Task<int> DeletePolicyAsync(int id, string performedBy);
     }
 

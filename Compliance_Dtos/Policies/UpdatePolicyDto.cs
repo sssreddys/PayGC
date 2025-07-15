@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace Compliance_Dtos.Policies
@@ -20,7 +21,9 @@ namespace Compliance_Dtos.Policies
         public DateTime? ReviewedDate { get; set; }
         public string ApprovedBy { get; set; }
         public DateTime? ApprovedDate { get; set; }
-        public string PerformedBy { get; set; }
+
+        [JsonIgnore]
+        public string PerformedBy { get; set; } = string.Empty;
     }
 
 }

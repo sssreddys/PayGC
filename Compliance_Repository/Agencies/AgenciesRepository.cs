@@ -4,10 +4,10 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Data;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Compliance_Dtos.Agencies;
 using Dapper;
+using Compliance_Dtos.Common;
 
 namespace Compliance_Repository.Agencies
 {
@@ -21,118 +21,186 @@ namespace Compliance_Repository.Agencies
                 ?? throw new ArgumentNullException("DefaultConnection");
         }
 
-        public async Task<IEnumerable<AgencyGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
+        public async Task<PagedResult<AgencyGetDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm, DateTime? fromDate, DateTime? toDate, string? status)
         {
             using var db = new SqlConnection(_conn);
 
-            return await db.QueryAsync<AgencyGetDto>( // Changed DTO type
+            using var multi = await db.QueryMultipleAsync(
                 "sp_get_all_agencys",
                 new
                 {
                     PageNumber = pageNumber,
                     PageSize = pageSize,
-                    SearchTerm = searchTerm
+                    SearchTerm = searchTerm,
+                    FromDate = fromDate,
+                    ToDate = toDate,
+                    Status = status
                 },
                 commandType: CommandType.StoredProcedure
             );
+
+            var totalRecords = await multi.ReadFirstAsync<int>();
+            var data = (await multi.ReadAsync<AgencyGetDto>()).ToList();
+
+            return new PagedResult<AgencyGetDto>
+            {
+                TotalRecords = totalRecords,
+                Page = pageNumber,
+                PageSize = pageSize,
+                Data = data
+            };
         }
 
         public async Task<AgencyGetDto?> GetByIdAsync(int id)
         {
             using var db = new SqlConnection(_conn);
-            return await db.QuerySingleOrDefaultAsync<AgencyGetDto>( // Changed DTO type
+            return await db.QuerySingleOrDefaultAsync<AgencyGetDto>(
                 "sp_get_agency_by_id",
                 new { Id = id },
                 commandType: CommandType.StoredProcedure
             );
         }
 
-        public async Task<AgencyGetDto?> AddAsync(AgencyAddDto agency) // Changed input DTO
+        public async Task<AgencyGetDto?> AddAsync(AgencyAddDto agency)
         {
             using var db = new SqlConnection(_conn);
 
-            var id = await db.ExecuteScalarAsync<int>(
-                "sp_add_agency",
-                new
+            try
+            {
+                var id = await db.ExecuteScalarAsync<int>(
+                    "sp_add_agency",
+                    new
+                    {
+                        agency.Name,
+                        agency.Address,
+                        agency.ContactPerson,
+                        agency.MobileNumber,
+                        agency.Email,
+                        agency.ContactAddress,
+                        agency.Status,
+                        agency.CreatedBy
+                    },
+                    commandType: CommandType.StoredProcedure
+                );
+
+                switch (id)
                 {
-                    agency.Name,
-                    agency.Address,
-                    agency.ContactPerson,
-                    agency.MobileNumber,
-                    agency.Email,
-                    agency.ContactAddress,
-                    agency.Status,
-                    agency.CreatedBy // Matches CreatedBy parameter in SP
-                },
-                commandType: CommandType.StoredProcedure
-            );
+                    case -1:
+                        throw new Exception("Email already exists.");
+                    case -2:
+                        throw new Exception("Mobile number already exists.");
+                    case -3:
+                        throw new Exception("Mobile number must contain only digits.");
+                    case -4:
+                        throw new Exception("Invalid email format.");
+                    case -5:
+                        throw new Exception("Invalid user. The 'CreatedBy' user does not exist.");
+                }
 
-            if (id == -1)
-                throw new Exception("Email already exists.");
-            if (id == -2)
-                throw new Exception("Mobile number already exists.");
-            if (id == -3)
-                throw new Exception("Mobile number must contain only digits.");
-            if (id == -4)
-                throw new Exception("Invalid email format.");
-            if (id <= 0) // Catch any other non-positive return codes indicating failure
-                throw new Exception("Failed to add agency.");
+                if (id <= 0)
+                    throw new Exception("Failed to add agency.");
 
-            // Fetch and return the newly inserted record using GetByIdAsync
-            return await GetByIdAsync(id);
+                return await GetByIdAsync(id);
+            }
+            catch (SqlException sqlEx)
+            {
+                if (sqlEx.Number == 51000 || sqlEx.Number == 547)
+                {
+                    if (sqlEx.Message.Contains("FK_agencies_created_by"))
+                        throw new Exception("Invalid user. The 'CreatedBy' user does not exist.");
+                }
+
+                throw new Exception("Database error: " + sqlEx.Message);
+            }
         }
 
-        public async Task<AgencyGetDto?> UpdateAsync(AgencyUpdateDto agency) // Changed input DTO
+        public async Task<AgencyGetDto?> UpdateAsync(AgencyUpdateDto agency)
         {
             using var db = new SqlConnection(_conn);
 
-            var resultCode = await db.ExecuteScalarAsync<int>(
-                "sp_update_agency",
-                new
+            try
+            {
+                var resultCode = await db.ExecuteScalarAsync<int>(
+                    "sp_update_agency",
+                    new
+                    {
+                        agency.Id,
+                        agency.Name,
+                        agency.Address,
+                        agency.ContactPerson,
+                        agency.MobileNumber,
+                        agency.Email,
+                        agency.ContactAddress,
+                        agency.PerformedBy
+                    },
+                    commandType: CommandType.StoredProcedure
+                );
+
+                switch (resultCode)
                 {
-                    agency.Id,
-                    agency.Name,
-                    agency.Address,
-                    agency.ContactPerson,
-                    agency.MobileNumber,
-                    agency.Email,
-                    agency.ContactAddress,
-                  
-                    agency.PerformedBy // Matches PerformedBy parameter in SP
-                },
-                commandType: CommandType.StoredProcedure
-            );
+                    case -1:
+                        throw new Exception("Email already exists.");
+                    case -2:
+                        throw new Exception("Mobile number already exists.");
+                    case -3:
+                        throw new Exception("Mobile number must contain only digits.");
+                    case -4:
+                        throw new Exception("Invalid email format.");
+                    case -5:
+                        throw new Exception("Invalid user. The 'PerformedBy' user does not exist.");
+                }
 
-            if (resultCode == -1)
-                throw new Exception("Email already exists.");
-            if (resultCode == -2)
-                throw new Exception("Mobile number already exists.");
-            if (resultCode == -3)
-                throw new Exception("Mobile number must contain only digits.");
-            if (resultCode == -4)
-                throw new Exception("Invalid email format.");
-            if (resultCode != 1) // Expecting 1 for success
-                throw new Exception("Update failed.");
+                if (resultCode != 1)
+                    throw new Exception("Update failed.");
 
-            return await GetByIdAsync(agency.Id);
+                return await GetByIdAsync(agency.Id);
+            }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 51001 || ex.Number == 547)
+                {
+                    if (ex.Message.Contains("FK_agency_audit_log_performed_by"))
+                        throw new Exception("Invalid user. The 'PerformedBy' user does not exist.");
+                }
+
+                throw new Exception("Database error: " + ex.Message);
+            }
         }
 
         public async Task<bool> DeleteAsync(int id, string performedBy)
         {
             using var db = new SqlConnection(_conn);
 
-            var result = await db.ExecuteScalarAsync<int>(
-                "sp_delete_agency",
-                new { Id = id, PerformedBy = performedBy },
-                commandType: CommandType.StoredProcedure
-            );
+            try
+            {
+                var result = await db.ExecuteScalarAsync<int>(
+                    "sp_delete_agency",
+                    new { Id = id, PerformedBy = performedBy },
+                    commandType: CommandType.StoredProcedure
+                );
 
-            if (result == -1)
-                throw new Exception("Agency not found.");
-            if (result == -2)
-                throw new Exception("Agency is already inactive.");
+                switch (result)
+                {
+                    case -1:
+                        throw new Exception("Agency not found.");
+                    case -2:
+                        throw new Exception("Agency is already inactive.");
+                    case -3:
+                        throw new Exception("Invalid user. The 'PerformedBy' user does not exist.");
+                }
 
-            return result == 1; // Return true only if result is 1 (success)
+                return result == 1;
+            }
+            catch (SqlException ex)
+            {
+                if (ex.Number == 51002 || ex.Number == 547)
+                {
+                    if (ex.Message.Contains("FK_agency_audit_log_performed_by"))
+                        throw new Exception("Invalid user. The 'PerformedBy' user does not exist.");
+                }
+
+                throw new Exception("Database error: " + ex.Message);
+            }
         }
     }
 }

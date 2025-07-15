@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace Compliance_Dtos.Agencies
 {
@@ -32,9 +33,10 @@ namespace Compliance_Dtos.Agencies
         [StringLength(255, ErrorMessage = "Contact address cannot exceed 255 characters.")]
         public string ContactAddress { get; set; } = string.Empty;
 
+        [JsonIgnore]
         public string? Status { get; set; } // Status can often be updated
 
-        [Required(ErrorMessage = "Performed by is required for update.")]
+        [JsonIgnore]
         [StringLength(255, ErrorMessage = "Performed by cannot exceed 255 characters.")]
         public string PerformedBy { get; set; } = string.Empty; // User who performs the update
     }
