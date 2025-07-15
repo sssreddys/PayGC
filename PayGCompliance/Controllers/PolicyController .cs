@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
 using System.Data.SqlClient;
+using System.Security.Claims;
 
 namespace PayGCompliance.Controllers
 {
@@ -24,7 +25,7 @@ namespace PayGCompliance.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPolicy([FromBody] AddPolicyDto dto)
         {
-            var createdBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var createdBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(createdBy))
                 return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: CreatedBy not found in token."));
@@ -56,7 +57,7 @@ namespace PayGCompliance.Controllers
             if (id != dto.Id)
                 return BadRequest(ApiResponse<string>.ErrorResponse("Mismatched ID between route and body."));
 
-            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(performedBy))
                 return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: PerformedBy not found in token."));
@@ -139,7 +140,7 @@ namespace PayGCompliance.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(performedBy))
                 return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: PerformedBy not found in token."));
