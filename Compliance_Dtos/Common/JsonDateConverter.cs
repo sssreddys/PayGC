@@ -11,6 +11,7 @@ namespace Compliance_Dtos.Common
         public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
             return DateTime.ParseExact(reader.GetString()!, Format, CultureInfo.InvariantCulture);
+
         }
 
         public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)

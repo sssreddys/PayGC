@@ -4,13 +4,14 @@ using Compliance_Services.AuditedAndTemplate;
 using Compliance_Services.NetWorthCertificates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 
 namespace PayGCompliance.Controllers
 {
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/networt_certificate")]
 
     public class NetWorthCertificatesController : ControllerBase
     {
@@ -51,7 +52,7 @@ namespace PayGCompliance.Controllers
                     await dto.AttachedDocument.CopyToAsync(ms);
                     documentBytes = ms.ToArray();
                 }
-                var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by!);
                 return Ok(new
@@ -91,7 +92,11 @@ namespace PayGCompliance.Controllers
                 if (financialRecord == null)
                     return NotFound(new { message = "Record not found." });
 
-                return Ok(financialRecord);
+                return Ok(new
+                {
+                    success = true,
+                    data = financialRecord
+                });
             }
 
             // Else, return paginated and filtered results
@@ -116,15 +121,18 @@ namespace PayGCompliance.Controllers
             try
             {
                 byte[]? documentBytes = null;
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-                var hfc = HttpContext.Request.Form.Files;
-                var hpf = hfc[0];
-                MemoryStream memory = new();
-                hpf.CopyTo(memory);
-                documentBytes = memory.ToArray();
+                if (Request.Form.Files.Count > 0)
+                {
+                    var hpf = Request.Form.Files[0]; // safely get the uploaded file
+
+                    using var memory = new MemoryStream();
+                    hpf.CopyTo(memory);
+                    documentBytes = memory.ToArray();
+                }
                 var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy);
                 if (updated == -1) return NotFound();
                 return Ok(new
@@ -148,7 +156,7 @@ namespace PayGCompliance.Controllers
         {
             try
             {
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 

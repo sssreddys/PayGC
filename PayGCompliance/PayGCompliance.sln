@@ -5,13 +5,15 @@ VisualStudioVersion = 17.12.35707.178
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PayGCompliance", "PayGCompliance.csproj", "{5DE97DD5-0DEB-4FA8-B839-A13E859BB654}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_models", "..\Compliance_models\Compliance_models.csproj", "{9D565188-F13D-40D1-B234-2822472D333C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_Models", "..\Compliance_models\Compliance_Models.csproj", "{9D565188-F13D-40D1-B234-2822472D333C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_Repository", "..\Compliance_Repository\Compliance_Repository.csproj", "{51823FC4-10CC-4347-8C14-EED6BDE274CD}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_Services", "..\Compliance_Services\Compliance_Services.csproj", "{398FD3C8-BA79-47D1-AC96-C324A5A7FB73}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_Dtos", "..\Compliance_Dtos\Compliance_Dtos.csproj", "{060A7C9B-6674-4C0E-B4D2-0FF224AE32DB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compliance_Common", "..\Compliance_Common\Compliance_Common.csproj", "{E3C5357F-9F83-4239-B4A6-085CBAFB186B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -39,6 +41,10 @@ Global
 		{060A7C9B-6674-4C0E-B4D2-0FF224AE32DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{060A7C9B-6674-4C0E-B4D2-0FF224AE32DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{060A7C9B-6674-4C0E-B4D2-0FF224AE32DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E3C5357F-9F83-4239-B4A6-085CBAFB186B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E3C5357F-9F83-4239-B4A6-085CBAFB186B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E3C5357F-9F83-4239-B4A6-085CBAFB186B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E3C5357F-9F83-4239-B4A6-085CBAFB186B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

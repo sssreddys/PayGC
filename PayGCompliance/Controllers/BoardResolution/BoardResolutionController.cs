@@ -7,6 +7,7 @@ using PayGCompliance.Common;
 
 namespace PayGCompliance.Controllers.BoardResolution
 {
+    [Authorize]
     [ApiController]
     [Route("api/board-resolutions")]
     public class BoardResolutionController : ControllerBase

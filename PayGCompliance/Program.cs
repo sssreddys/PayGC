@@ -1,17 +1,19 @@
-﻿using Compliance_Dtos.Regulator;
+﻿using Compliance_Dtos.Agencies;
+using Compliance_Dtos.Regulator;
+using Compliance_Dtos.Regulator;
 using Compliance_Services.JWT;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Compliance_Dtos.Regulator;
-using Compliance_Dtos.Agencies;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // 🔐 JWT Authentication Setup
 var conn = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -43,7 +45,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var result = JsonSerializer.Serialize(new
                 {
-                    success=false,
+                    success = false,
                     message = "Unauthorized"
                 });
 
@@ -118,7 +120,7 @@ Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
 Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 // Add services to the container.
 
-
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
 
@@ -167,6 +169,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 
 // 🛡️ Custom Middleware for Error Handling
 

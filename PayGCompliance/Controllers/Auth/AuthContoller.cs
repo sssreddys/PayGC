@@ -1,4 +1,5 @@
-﻿using Compliance_Dtos.Auth;
+﻿using Compliance_Common;
+using Compliance_Dtos.Auth;
 using Compliance_Services.JWT;
 using Compliance_Services.User;
 using Microsoft.AspNetCore.Authorization;
@@ -23,6 +24,7 @@ namespace PayGCompliance.Controllers.Auth
             _hasher = new PasswordHasher<object>();
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
+
         [AllowAnonymous]
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
@@ -45,17 +47,29 @@ namespace PayGCompliance.Controllers.Auth
                 {
                     var role = (UserRole)roleId;
 
-                    if (role != UserRole.Admin && role != UserRole.SuperAdmin)
+                    if (role == UserRole.SuperAdmin)
                     {
-                        return StatusCode(403, ApiResponse<object>.ErrorResponse("You are not authorized to register other users."));
+                        if (dto.RoleId == null)
+                            return BadRequest(ApiResponse<object>.ErrorResponse("Role is required when registered by SuperAdmin."));
+
+                        // ✅ Let stored procedure validate the role_id
+                        var newUserId = await _service.RegisterUserAsync(dto, userId);
+                        return Ok(ApiResponse<object>.SuccessResponse(new { user_id = newUserId }, "User registered successfully"));
                     }
 
-                    // Admin registering a user
-                    var newUserId = await _service.RegisterUserAsync(dto, userId);
-                    return Ok(ApiResponse<object>.SuccessResponse(new { user_id = newUserId }, "User registered successfully"));
+                    if (role == UserRole.Admin)
+                    {
+                        // ✅ Pass request role_id as-is and let SP enforce that Admin can only create Normal Users
+                        var newUserId = await _service.RegisterUserAsync(dto, userId);
+                        return Ok(ApiResponse<object>.SuccessResponse(new { user_id = newUserId }, "User registered successfully"));
+                    }
+
+                    // ❌ Other roles not allowed to register users
+                    return StatusCode(403, ApiResponse<object>.ErrorResponse("You are not authorized to register other users."));
                 }
 
-                // Self-registration (anonymous)
+                // ✅ Self-registration
+                // Let the user pass role_id (even if 1 or 2), and let SP validate it
                 var selfRegisteredUserId = await _service.RegisterUserAsync(dto, null);
                 return Ok(ApiResponse<object>.SuccessResponse(new { user_id = selfRegisteredUserId }, "User registered successfully"));
             }

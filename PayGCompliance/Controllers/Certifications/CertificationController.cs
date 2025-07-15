@@ -2,11 +2,13 @@
 using Compliance_Dtos.Certifications;
 using Compliance_Dtos.Common;
 using Compliance_Services.Certifications;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
 
 namespace PayGCompliance.Controllers.Certifications
 {
+    [Authorize]
     [ApiController]
     [Route("api/certifications")]
     public class CertificationController : ControllerBase

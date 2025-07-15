@@ -56,11 +56,7 @@ public class AuditedFinancialRepository : IAuditedFinancialRepository
             _ => throw new ArgumentException("Invalid controller name.", nameof(controller))
         };
 
-        return await db.QueryFirstOrDefaultAsync<AuditedTemplateListDto>(
-            spName,
-            new { Id = id },
-            commandType: CommandType.StoredProcedure
-        );
+        return await db.QueryFirstOrDefaultAsync<AuditedTemplateListDto>(spName, new { Id = id },commandType: CommandType.StoredProcedure);
     }
 
     public async Task<int> UpdateAsync(byte[]? documentBytes, UpdateAuditedTemplateDto dto, string updatedBy, string controller)
