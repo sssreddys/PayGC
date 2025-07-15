@@ -1,11 +1,15 @@
 ﻿// PayGCompliance.Controllers.Regulator.RegulatorsController
+using Compliance_Dtos.Common;
 using Compliance_Dtos.Regulator;
 using Compliance_Services.Regulator;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PayGCompliance.Common; // Assuming ApiResponse is defined here
+using PayGCompliance.Common;
+using System.Security.Claims; // Assuming ApiResponse is defined here
 
 namespace PayGCompliance.Controllers.Regulator
 {
+    [Authorize]
     [ApiController]
     [Route("api/regulators")]
     public class RegulatorsController : ControllerBase
@@ -18,17 +22,30 @@ namespace PayGCompliance.Controllers.Regulator
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+        public async Task<IActionResult> GetAll(
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] DateTime? fromDate = null,
+            [FromQuery] DateTime? toDate = null,
+            [FromQuery] string? status = null)
         {
-            var data = await _service.GetAllAsync(pageNumber, pageSize, searchTerm);
 
-            return Ok(new ApiResponse<IEnumerable<RegulatorGetDto>> // Changed to RegulatorGetDto
+            if (pageNumber <= 0 || pageSize <= 0)
+            {
+                return BadRequest(ApiResponse<string>.ErrorResponse("Page number and page size must be greater than 0."));
+            }
+
+            var result = await _service.GetAllAsync(pageNumber, pageSize, searchTerm, fromDate, toDate, status);
+
+            return Ok(new ApiResponse<PagedResult<RegulatorGetDto>>
             {
                 Success = true,
                 Message = "Regulators fetched successfully.",
-                Data = data
+                Data = result
             });
         }
+
 
         [HttpGet("{id}")]
         public async Task<IActionResult> GetById(int id)
@@ -53,113 +70,73 @@ namespace PayGCompliance.Controllers.Regulator
         }
 
         [HttpPost]
-        public async Task<IActionResult> Add(RegulatorAddDto regulatorAddDto) // Accepts RegulatorAddDto
+        public async Task<IActionResult> Add(RegulatorAddDto regulatorAddDto)
         {
-            // ID should not be set by the client for an Add operation.
-            // regulatorAddDto.Id = 0; // This line is not strictly needed if Id is [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+            var createdBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(createdBy))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
+
+            regulatorAddDto.CreatedBy = createdBy;
 
             try
             {
-                var newRegulator = await _service.AddAsync(regulatorAddDto); // Pass RegulatorAddDto
-
-                return Ok(new ApiResponse<RegulatorGetDto> // Returns RegulatorGetDto
-                {
-                    Success = true,
-                    Message = "Regulator added successfully.",
-                    Data = newRegulator!
-                });
+                var newRegulator = await _service.AddAsync(regulatorAddDto);
+                return Ok(ApiResponse<RegulatorGetDto>.SuccessResponse(newRegulator, "Regulator added successfully."));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
             }
         }
 
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, RegulatorUpdateDto regulatorUpdateDto) // Accepts RegulatorUpdateDto
+        public async Task<IActionResult> Update(int id, RegulatorUpdateDto regulatorUpdateDto)
         {
             if (id != regulatorUpdateDto.Id)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "ID mismatch between route and body.",
-                    Data = null
-                });
-            }
+                return BadRequest(ApiResponse<object>.ErrorResponse("ID mismatch between route and body."));
+
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(performedBy))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
+
+            regulatorUpdateDto.PerformedBy = performedBy;
 
             try
             {
-                var updatedRegulator = await _service.UpdateAsync(regulatorUpdateDto); // Pass RegulatorUpdateDto
-
-                if (updatedRegulator == null)
-                {
-                    return NotFound(new ApiResponse<RegulatorGetDto>
-                    {
-                        Success = false,
-                        Message = "Regulator not found or update failed.",
-                        Data = null
-                    });
-                }
-
-                return Ok(new ApiResponse<RegulatorGetDto> // Returns RegulatorGetDto
-                {
-                    Success = true,
-                    Message = "Regulator updated successfully.",
-                    Data = updatedRegulator
-                });
+                var updatedRegulator = await _service.UpdateAsync(regulatorUpdateDto);
+                return Ok(ApiResponse<RegulatorGetDto>.SuccessResponse(updatedRegulator, "Regulator updated successfully."));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
             }
         }
 
-
         [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
+        public async Task<IActionResult> Delete(int id)
         {
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrWhiteSpace(performedBy))
+                return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: PerformedBy not found in token."));
+
             try
             {
                 var result = await _service.DeleteAsync(id, performedBy);
 
                 if (!result)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "Regulator not found or could not be deleted.",
-                        Data = null
-                    });
-                }
+                    return NotFound(ApiResponse<object>.ErrorResponse("Regulator not found or could not be deleted."));
 
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Regulator deleted successfully.",
-                    Data = result
-                });
+                return Ok(ApiResponse<object>.SuccessResponse(null, "Regulator deleted successfully."));
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = ex.Message,
-                    Data = null
-                });
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
             }
         }
+
     }
 }

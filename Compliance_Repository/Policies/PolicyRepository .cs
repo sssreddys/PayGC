@@ -8,6 +8,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Compliance_Dtos.Common;
 
 namespace Compliance_Repository.Policies
 {
@@ -55,8 +56,7 @@ namespace Compliance_Repository.Policies
             parameters.Add("@ReviewedDate", dto.ReviewedDate);
             parameters.Add("@ApprovedBy", dto.ApprovedBy);
             parameters.Add("@ApprovedDate", dto.ApprovedDate);
-            parameters.Add("@Status", dto.Status);
-            parameters.Add("@UpdatedBy", dto.UpdatedBy);
+            parameters.Add("@PerformedBy", dto.PerformedBy);
 
             return await _db.ExecuteScalarAsync<int>("sp_update_policy", parameters, commandType: CommandType.StoredProcedure);
         }
@@ -70,14 +70,30 @@ namespace Compliance_Repository.Policies
             );
         }
 
-        public async Task<IEnumerable<ListPolicyDto>> GetAllPoliciesAsync(int pageNumber, int pageSize, string? searchTerm)
+        public async Task<PagedResult<ListPolicyDto>> GetAllPoliciesAsync(int pageNumber, int pageSize, string? searchTerm, DateTime? fromDate, DateTime? toDate, string? status)
         {
-            return await _db.QueryAsync<ListPolicyDto>(
-                "sp_get_all_policies",
-                new { PageNumber = pageNumber, PageSize = pageSize, SearchTerm = searchTerm },
-                commandType: CommandType.StoredProcedure
-            );
+            var parameters = new DynamicParameters();
+            parameters.Add("@PageNumber", pageNumber);
+            parameters.Add("@PageSize", pageSize);
+            parameters.Add("@SearchTerm", searchTerm);
+            parameters.Add("@FromDate", fromDate);
+            parameters.Add("@ToDate", toDate);
+            parameters.Add("@Status", status);
+
+            using var multi = await _db.QueryMultipleAsync("sp_get_all_policies", parameters, commandType: CommandType.StoredProcedure);
+
+            var totalRecords = await multi.ReadFirstAsync<int>();
+            var data = (await multi.ReadAsync<ListPolicyDto>()).ToList();
+
+            return new PagedResult<ListPolicyDto>
+            {
+                TotalRecords = totalRecords,
+                Page = pageNumber,
+                PageSize = pageSize,
+                Data = data
+            };
         }
+
 
         public async Task<int> DeletePolicyAsync(int id, string performedBy)
         {

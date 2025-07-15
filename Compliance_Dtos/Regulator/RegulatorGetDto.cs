@@ -18,8 +18,6 @@ namespace Compliance_Dtos.Regulator
         public string Email { get; set; }
         public string ContactAddress { get; set; }
         public string? Status { get; set; }
-
-        [JsonConverter(typeof(JsonDateConverter))]
         public string? CreatedBy { get; set; } // Only for display in Get
     }
 }
