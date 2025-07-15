@@ -4,7 +4,8 @@ using Compliance_Dtos.Regulator;
 using Compliance_Services.Regulator;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using PayGCompliance.Common; // Assuming ApiResponse is defined here
+using PayGCompliance.Common;
+using System.Security.Claims; // Assuming ApiResponse is defined here
 
 namespace PayGCompliance.Controllers.Regulator
 {
@@ -71,7 +72,7 @@ namespace PayGCompliance.Controllers.Regulator
         [HttpPost]
         public async Task<IActionResult> Add(RegulatorAddDto regulatorAddDto)
         {
-            var createdBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var createdBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(createdBy))
                 return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
@@ -96,7 +97,7 @@ namespace PayGCompliance.Controllers.Regulator
             if (id != regulatorUpdateDto.Id)
                 return BadRequest(ApiResponse<object>.ErrorResponse("ID mismatch between route and body."));
 
-            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(performedBy))
                 return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
@@ -117,7 +118,7 @@ namespace PayGCompliance.Controllers.Regulator
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(performedBy))
                 return Unauthorized(ApiResponse<string>.ErrorResponse("Unauthorized: PerformedBy not found in token."));

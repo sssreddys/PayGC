@@ -4,7 +4,8 @@ using Compliance_Services.Agencies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using PayGCompliance.Common; // Assuming ApiResponse is in this namespace
+using PayGCompliance.Common;
+using System.Security.Claims; // Assuming ApiResponse is in this namespace
 
 namespace PayGCompliance.Controllers
 {
@@ -71,7 +72,7 @@ namespace PayGCompliance.Controllers
         [HttpPost]
         public async Task<IActionResult> Add([FromBody] AgencyAddDto agency)
         {
-            var createdBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var createdBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrEmpty(createdBy))
             {
@@ -110,7 +111,7 @@ namespace PayGCompliance.Controllers
             if (id != agency.Id)
                 return BadRequest(ApiResponse<object>.ErrorResponse("ID mismatch between route and body."));
 
-            var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+            var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(performedBy))
                 return Unauthorized(ApiResponse<object>.ErrorResponse("User identity not found in token."));
@@ -134,7 +135,7 @@ namespace PayGCompliance.Controllers
         {
             try
             {
-                var performedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var performedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (string.IsNullOrEmpty(performedBy))
                 {
