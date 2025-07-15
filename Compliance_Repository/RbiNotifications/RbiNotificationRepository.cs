@@ -111,7 +111,7 @@ namespace Compliance_Repository.RbiNotifications
             p.Add("@UpdatedAt", DateTime.Now);
             p.Add("@UpdatedBy", updatedBy);
             p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
-            var result = await db.QueryFirstOrDefaultAsync<int>("sp_add_rbi_notification",p,commandType: CommandType.StoredProcedure);
+            var result = await db.QueryFirstOrDefaultAsync<int>("sp_update_rbi_notification",p,commandType: CommandType.StoredProcedure);
 
             return result;
         }

@@ -6,6 +6,7 @@ using Compliance_Services.RbiNotifications;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
+using System.Security.Claims;
 
 namespace PayGCompliance.Controllers.RbiNotifications
 {
@@ -47,7 +48,7 @@ namespace PayGCompliance.Controllers.RbiNotifications
                     await dto.AttachedDocument.CopyToAsync(ms);
                     documentBytes = ms.ToArray();
                 }
-                var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by);
                 return Ok(new
@@ -150,12 +151,12 @@ namespace PayGCompliance.Controllers.RbiNotifications
 
         [HttpPost("update")]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Update([FromBody] UpdateRbiNotificationDto dto)
+        public async Task<IActionResult> Update([FromForm] UpdateRbiNotificationDto dto)
         {
             try
             {
                 byte[]? documentBytes = null;
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
