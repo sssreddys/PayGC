@@ -4,6 +4,7 @@ using Compliance_Services.AuditedAndTemplate;
 using Compliance_Services.NetWorthCertificates;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 
 namespace PayGCompliance.Controllers
@@ -51,7 +52,7 @@ namespace PayGCompliance.Controllers
                     await dto.AttachedDocument.CopyToAsync(ms);
                     documentBytes = ms.ToArray();
                 }
-                var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by!);
                 return Ok(new
@@ -120,7 +121,7 @@ namespace PayGCompliance.Controllers
             try
             {
                 byte[]? documentBytes = null;
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
@@ -155,7 +156,7 @@ namespace PayGCompliance.Controllers
         {
             try
             {
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 

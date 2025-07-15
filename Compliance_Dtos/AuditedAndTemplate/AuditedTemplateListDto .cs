@@ -10,5 +10,6 @@ namespace Compliance_Dtos.AuditedAndTemplate
 {
     public class AuditedTemplateListDto : ListBaseDto
     {
+
     }
 }
