@@ -1,15 +1,20 @@
 ﻿
 
+using Compliance_Dtos.Common;
 using Compliance_Dtos.VolumesValues;
 using Compliance_Services.VolumesValues;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
 using System;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Authorization;
 
 namespace PayGCompliance.Controllers.VolumesValues
 {
+    [Authorize]
     [ApiController]
     [Route("api/volumevalues")]
     public class VolumeValuesController : ControllerBase
@@ -22,13 +27,25 @@ namespace PayGCompliance.Controllers.VolumesValues
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? searchTerm = null)
+        public async Task<IActionResult> GetAllAsync(
+             [FromQuery(Name = "search")] string? searchKeyword,
+     [FromQuery(Name = "status")] string? statusFilter,
+     [FromQuery(Name = "page")] int pageNumber = 1,
+     [FromQuery(Name = "pageSize")] int recordsPerPage = 10,
+     [FromQuery(Name = "fromDate")] DateTime? fromDate = null,
+     [FromQuery(Name = "toDate")] DateTime? toDate = null
+            )
         {
             try
             {
-                var data = await _service.GetAllAsync(pageNumber, pageSize, searchTerm);
+                var data = await _service.GetPagedAsync(searchKeyword,
+            statusFilter,
+            pageNumber,
+            recordsPerPage,
+            fromDate,
+            toDate);
 
-                return Ok(new ApiResponse<IEnumerable<VolumeValueDto>>
+                return Ok(new ApiResponse<PagedResult<VolumeValueDto>>
                 {
                     Success = true,
                     Message = "Volume values fetched successfully.",
@@ -37,11 +54,10 @@ namespace PayGCompliance.Controllers.VolumesValues
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error fetching volume values: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
@@ -54,126 +70,140 @@ namespace PayGCompliance.Controllers.VolumesValues
                 var data = await _service.GetByIdAsync(id);
                 if (data == null)
                 {
-                    return NotFound(new ApiResponse<object>
+                    return NotFound(new ApiResponse<VolumeValueDto>
                     {
                         Success = false,
-                        Message = $"No volume value found with ID = {id}",
-                        Data = null
+                        Message = "Volumes and Values not found.",
                     });
                 }
 
                 return Ok(new ApiResponse<VolumeValueDto>
                 {
                     Success = true,
-                    Message = "Volume value retrieved successfully.",
+                    Message = "Volumes and Values retrieved successfully.",
                     Data = data
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error retrieving volume value: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateVolumeValueDto dto)
+        [HttpPost("create")]
+        public async Task<IActionResult> Create([FromForm] CreateVolumeValueDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return BadRequest(new { message = errorMessages });
+            }
             try
             {
-                var id = await _service.CreateAsync(dto);
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                // 2. Option A: Pass `createdBy` separately if service accepts it
+                var id = await _service.CreateAsync(dto, created_by!);
 
-                return Ok(new ApiResponse<object>
+                return Ok(new
                 {
-                    Success = true,
-                    Message = "Volume value created successfully.",
-                    Data = new { Id = id }
+                    success = true,
+                    message = "Volumes and Values record created successfully."
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error creating volume value: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] UpdateVolumeValueDto dto)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update([FromForm] UpdateVolumeValueDto dto)
         {
             try
             {
-                var updated = await _service.UpdateAsync(id, dto);
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(updatedBy))
+                    return Unauthorized(new { message = "Invalid token or user ID missing" });
+                var updated = await _service.UpdateAsync(dto, updatedBy);
 
-                if (!updated)
+                if (updated == -1) return NotFound();
+                return Ok(new
                 {
-                    return NotFound(new ApiResponse<object>
+                    success = true,
+                    message = "Volumes and Values record Updated successfully."
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    success = false,
+                    message = ex.Message
+                });
+            }
+        }
+
+
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete([FromBody] DeleteRequestDto dto)
+        {
+            try
+            {
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(updatedBy))
+                    return Unauthorized(new { message = "Invalid token or user ID missing" });
+
+                var deleted = await _service.DeleteAsync(dto, updatedBy);
+
+
+
+                return deleted switch
+                {
+                    -1 => NotFound(new
                     {
-                        Success = false,
-                        Message = $"No volume value found with ID = {id} to update.",
-                        Data = null
-                    });
-                }
+                        success = false,
+                        message = "Record not found."
+                    }),
 
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Volume value updated successfully.",
-                    Data = updated
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = $"Error updating volume value: {ex.Message}",
-                    Data = null
-                });
-            }
-        }
-
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                var deleted = await _service.DeleteAsync(id);
-
-                if (!deleted)
-                {
-                    return NotFound(new ApiResponse<object>
+                    -2 => BadRequest(new
                     {
-                        Success = false,
-                        Message = $"No volume value found with ID = {id} to delete.",
-                        Data = null
-                    });
-                }
+                        success = false,
+                        message = "This record is already deleted."
+                    }),
 
-                return Ok(new ApiResponse<object>
-                {
-                    Success = true,
-                    Message = "Volume value deleted successfully.",
-                    Data = null
-                });
+                    > 0 => Ok(new
+                    {
+                        success = true,
+                        message = "Volumes and Values Deleted successfully"
+                    }),
+
+                    _ => StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Unexpected error occurred during deletion."
+                    })
+                };
+
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error deleting volume value: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
     }
-}
+    }

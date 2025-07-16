@@ -1,8 +1,10 @@
 ﻿using Compliance_Dtos.Agencies;
 using Compliance_Dtos.Regulator;
+using Compliance_Dtos.Regulator;
 using Compliance_Services.JWT;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Globalization;
@@ -11,6 +13,7 @@ using System.Text.Json;
 
 
 var builder = WebApplication.CreateBuilder(args);
+
 
 // 🔐 JWT Authentication Setup
 var conn = builder.Configuration.GetConnectionString("DefaultConnection")
@@ -166,6 +169,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 
 // 🛡️ Custom Middleware for Error Handling
 

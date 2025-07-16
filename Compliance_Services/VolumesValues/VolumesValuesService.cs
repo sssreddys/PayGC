@@ -1,5 +1,6 @@
 ﻿using Compliance_Dtos;
 using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Dtos.Common;
 using Compliance_Dtos.VolumesValues;
 using System;
 using System.Collections.Generic;
@@ -14,16 +15,15 @@ namespace Compliance_Services.VolumesValues
         private readonly IVolumesValuesRepository _repo;
 
         public VolumesValuesService(IVolumesValuesRepository repo) => _repo = repo;
-        public async Task<IEnumerable<VolumeValueDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
-        {
-            return await _repo.GetAllAsync(pageNumber, pageSize, searchTerm);
-        }
 
-        public Task<int> CreateAsync(CreateVolumeValueDto dto) => _repo.CreateAsync(dto);
+        public Task<PagedResult<VolumeValueDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
+       => _repo.GetPagedAsync(search, status, page, pageSize, fromDate, toDate);
+
+        public Task<int> CreateAsync(CreateVolumeValueDto dto, string created_by) => _repo.CreateAsync(dto, created_by);
        
         public Task<VolumeValueDto?> GetByIdAsync(int id) => _repo.GetByIdAsync(id);
-        public Task<bool> UpdateAsync(int id, UpdateVolumeValueDto dto) => _repo.UpdateAsync(id, dto);
-        public Task<bool> DeleteAsync(int id) => _repo.DeleteAsync(id);
+        public Task<int> UpdateAsync(UpdateVolumeValueDto dto, string updatedBy) => _repo.UpdateAsync(dto, updatedBy);
+        public Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy) => _repo.DeleteAsync(dto, updatedBy);
       
     }
 }
