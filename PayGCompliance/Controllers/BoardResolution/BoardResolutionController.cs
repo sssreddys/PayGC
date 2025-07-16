@@ -46,11 +46,10 @@ namespace PayGCompliance.Controllers.BoardResolution
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error fetching data: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
@@ -121,7 +120,7 @@ namespace PayGCompliance.Controllers.BoardResolution
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by!);
 
-                return Ok(new ApiResponse<int>
+                return Ok(new 
                 {
                     Success = true,
                     Message = "Board resolution created successfully.",
@@ -159,7 +158,7 @@ namespace PayGCompliance.Controllers.BoardResolution
                 var updated = await _service.UpdateAsync(dto, documentBytes, updatedBy);
                 if (updated == -1) return NotFound();
 
-                return Ok(new ApiResponse<object>
+                return Ok(new 
                 {
                     Success = true,
                     Message = "Board resolution updated successfully.",
