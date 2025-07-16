@@ -1,6 +1,7 @@
 ﻿
 using Compliance_Dtos;
 using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Dtos.Common;
 using Compliance_Dtos.VolumesValues;
 using Dapper;
 using Microsoft.Extensions.Configuration;
@@ -17,7 +18,7 @@ public class VolumesValuesRepository : IVolumesValuesRepository
         _conn = config.GetConnectionString("DefaultConnection");
     }
 
-    public async Task<int> CreateAsync(CreateVolumeValueDto dto)
+    public async Task<int> CreateAsync(CreateVolumeValueDto dto, string created_by)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -30,59 +31,56 @@ public class VolumesValuesRepository : IVolumesValuesRepository
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@Status", dto.Status);
-        p.Add("@CreatedBy", dto.CreatedBy);
-        p.Add("@CreatedAt", DateTime.UtcNow);
+        p.Add("@CreatedBy", created_by);
+        p.Add("@CreatedAt", DateTime.Now);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
-        try
-        {
-            await db.ExecuteAsync("sp_create_volume_value", p, commandType: CommandType.StoredProcedure);
-            return p.Get<int>("@ReturnVal");
-        }
-        catch (SqlException ex)
-        {
-            // Optional: You can inspect ex.Message or ex.Number for custom handling
-            throw new ApplicationException($"Database error: {ex.Message}", ex);
-        }
+        
+        await db.ExecuteAsync("sp_create_volume_value", p, commandType: CommandType.StoredProcedure);
+        return p.Get<int>("@ReturnVal");
     }
     
 
-    public async Task<IEnumerable<VolumeValueDto>> GetAllAsync(int pageNumber, int pageSize, string? searchTerm)
+    public async Task<PagedResult<VolumeValueDto>> GetPagedAsync(string? search,
+        string? status,
+        int page,
+        int pageSize,
+        DateTime? fromDate,
+        DateTime? toDate)
     {
         using var db = new SqlConnection(_conn);
-        return await db.QueryAsync<VolumeValueDto>("sp_get_all_volume_values",
-            new
-            {
-                PageNumber = pageNumber,
-                PageSize = pageSize,
-                SearchTerm = searchTerm
-            }, commandType: CommandType.StoredProcedure);
+        var p = new DynamicParameters();
+
+        p.Add("@Search", search);
+        p.Add("@Status", status);
+        p.Add("@Page", page);
+        p.Add("@PageSize", pageSize);
+        p.Add("@FromDate", fromDate?.Date);
+        p.Add("@ToDate", toDate?.Date);
+
+        using var multi = await db.QueryMultipleAsync("sp_get_all_volume_values", p, commandType: CommandType.StoredProcedure);
+        var data = await multi.ReadAsync<VolumeValueDto>();
+        var total = await multi.ReadFirstAsync<int>();
+
+        return new PagedResult<VolumeValueDto>
+        {
+            Data = data,
+            TotalRecords = total,
+            Page = page,
+            PageSize = pageSize
+        };
     }
 
     public async Task<VolumeValueDto?> GetByIdAsync(int id)
     {
-        try
-        {
-            using var db = new SqlConnection(_conn);
-            var result = (await db.QueryAsync<VolumeValueDto>(
-                "sp_get_volume_value_by_id",
-                new { Id = id },
-                commandType: CommandType.StoredProcedure)).FirstOrDefault();
-
-            return result;
-        }
-        catch (SqlException ex) when (ex.Message.Contains("VolumeValue not found"))
-        {
-            // Log the exception if needed
-            return null;
-        }
+        using var db = new SqlConnection(_conn);
+        return await db.QueryFirstOrDefaultAsync<VolumeValueDto>("sp_get_volume_value_by_id", new { Id = id }, commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<bool> UpdateAsync(int id, UpdateVolumeValueDto dto)
+    public async Task<int> UpdateAsync(UpdateVolumeValueDto dto, string updatedBy)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
-        p.Add("@Id", id);
+        p.Add("@Id", dto.VolumeValueId);
         p.Add("@Date", dto.Date);
         p.Add("@FinancialYear", dto.FinancialYear);
         p.Add("@Period", dto.Period);
@@ -92,38 +90,28 @@ public class VolumesValuesRepository : IVolumesValuesRepository
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@Status", dto.Status);
-        p.Add("@CreatedBy", dto.CreatedBy);
-        p.Add("@UpdatedAt", dto.UpdatedAt ?? DateTime.UtcNow);
-
+        p.Add("@UpdatedAt", DateTime.Now);
+        p.Add("@UpdatedBy", updatedBy);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("sp_update_volume_value", p, commandType: CommandType.StoredProcedure);
-        var result = p.Get<int>("@ReturnVal");
+        
+        return p.Get<int>("@ReturnVal");
 
-        return result == 1;
     }
 
-    public async Task<bool> DeleteAsync(int id)
+    public async Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy)
     {
         using var db = new SqlConnection(_conn);
+        var p = new DynamicParameters();
 
-        // Step 1: Get created_by from the volumes_values table
-        var createdBy = await db.ExecuteScalarAsync<string>(
-            "SELECT vv_created_by FROM volumes_values WHERE vv_id = @Id",
-            new { Id = id }
-        );
+        p.Add("@Id", dto.Id);
+        p.Add("@UpdatedBy", updatedBy);
+        p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
-        if (string.IsNullOrEmpty(createdBy))
-            return false; // Record doesn't exist
+        await db.ExecuteAsync("sp_delete_volume_value", p, commandType: CommandType.StoredProcedure);
 
-        // Step 2: Call the stored procedure to soft delete
-        var resultCode = await db.ExecuteScalarAsync<int>(
-            "sp_delete_volume_value",
-            new { Id = id, PerformedBy = createdBy },
-            commandType: CommandType.StoredProcedure
-        );
-        return resultCode == 1;
+        return p.Get<int>("@ReturnVal");
     }
 
    

@@ -4,9 +4,11 @@ using Compliance_Services.BoardResolution;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
+using System.Security.Claims;
 
 namespace PayGCompliance.Controllers.BoardResolution
 {
+    [Authorize]
     [ApiController]
     [Route("api/board-resolutions")]
     public class BoardResolutionController : ControllerBase
@@ -20,16 +22,21 @@ namespace PayGCompliance.Controllers.BoardResolution
 
         [HttpGet]
         public async Task<IActionResult> GetAll(
-            [FromQuery] string? search = null,
-            [FromQuery] bool? status = null,
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 10,
-            [FromQuery] DateTime? fromDate = null,
-            [FromQuery] DateTime? toDate = null)
+             [FromQuery(Name = "search")] string? searchKeyword,
+     [FromQuery(Name = "status")] string? statusFilter,
+     [FromQuery(Name = "page")] int pageNumber = 1,
+     [FromQuery(Name = "pageSize")] int recordsPerPage = 10,
+     [FromQuery(Name = "fromDate")] DateTime? fromDate = null,
+     [FromQuery(Name = "toDate")] DateTime? toDate = null)
         {
             try
             {
-                var result = await _service.GetPagedAsync(search, status, page, pageSize, fromDate, toDate);
+                var result = await _service.GetPagedAsync(searchKeyword,
+            statusFilter,
+            pageNumber,
+            recordsPerPage,
+            fromDate,
+            toDate);
                 return Ok(new ApiResponse<PagedResult<BoardResolutionDto>>
                 {
                     Success = true,
@@ -73,117 +80,148 @@ namespace PayGCompliance.Controllers.BoardResolution
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error retrieving board resolution: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] BoardResolutionDto dto)
+        [HttpPost("create")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Create([FromForm] CreateBoardResolutionDto dto)
         {
+            if (!ModelState.IsValid)
+            {
+                var errorMessages = string.Join(" | ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+
+                return BadRequest(new { message = errorMessages });
+            }
             try
             {
-                dto.CreatedAt = DateTime.UtcNow;
-                var id = await _service.CreateAsync(dto, dto.AttachedDocument);
+                byte[]? documentBytes = null;
+                if (dto.AttachedDocument != null && dto.AttachedDocument.Length > 0)
+                {
+                    if (dto.AttachedDocument.Length > 500 * 1024) // Max 1MB
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Attached Document size should not exceed 500KB."
+
+                        });
+
+                    using var ms = new MemoryStream();
+                    await dto.AttachedDocument.CopyToAsync(ms);
+                    documentBytes = ms.ToArray();
+                }
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                var id = await _service.CreateAsync(dto, documentBytes, created_by!);
 
                 return Ok(new ApiResponse<int>
                 {
                     Success = true,
                     Message = "Board resolution created successfully.",
-                    Data = id
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error creating board resolution: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
 
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] BoardResolutionDto dto)
+        [HttpPut("update")]
+        public async Task<IActionResult> Update([FromForm] UpdateBoardResolutionDto dto)
         {
-            if (id != dto.BoardResolutionId)
-            {
-                return BadRequest(new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "ID in URL and body do not match.",
-                    Data = null
-                });
-            }
 
             try
             {
-                dto.UpdatedAt = DateTime.UtcNow;
-                var result = await _service.UpdateAsync(dto, dto.AttachedDocument);
+                byte[]? documentBytes = null;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(updatedBy))
+                    return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-                if (result < 0)
+                if (Request.Form.Files.Count > 0)
                 {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "Board resolution not found.",
-                        Data = null
-                    });
+                    var hpf = Request.Form.Files[0]; // safely get the uploaded file
+
+                    using var memory = new MemoryStream();
+                    hpf.CopyTo(memory);
+                    documentBytes = memory.ToArray();
                 }
+                var updated = await _service.UpdateAsync(dto, documentBytes, updatedBy);
+                if (updated == -1) return NotFound();
 
                 return Ok(new ApiResponse<object>
                 {
                     Success = true,
                     Message = "Board resolution updated successfully.",
-                    Data = null
                 });
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error updating board resolution: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id, [FromQuery] string performedBy)
+        [HttpDelete("delete")]
+        public async Task<IActionResult> Delete([FromBody] DeleteRequestDto dto)
         {
             try
             {
-                var result = await _service.DeleteAsync(id, performedBy);
-                if (result < 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Success = false,
-                        Message = "Board resolution not found or could not be deleted.",
-                        Data = null
-                    });
-                }
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(updatedBy))
+                    return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-                return Ok(new ApiResponse<object>
+                var deleted = await _service.DeleteAsync(dto, updatedBy);
+
+                return deleted switch
                 {
-                    Success = true,
-                    Message = "Board resolution deleted successfully.",
-                    Data = null
-                });
+                    -1 => NotFound(new
+                    {
+                        success = false,
+                        message = "Record not found."
+                    }),
+
+                    -2 => BadRequest(new
+                    {
+                        success = false,
+                        message = "This record is already deleted."
+                    }),
+
+                    > 0 => Ok(new
+                    {
+                        success = true,
+                        message = "Board Resolution Deleted successfully"
+                    }),
+
+                    _ => StatusCode(500, new
+                    {
+                        success = false,
+                        message = "Unexpected error occurred during deletion."
+                    })
+                };
+
+
             }
             catch (Exception ex)
             {
-                return BadRequest(new ApiResponse<object>
+                // Log the exception here if you have a logging framework
+                return StatusCode(500, new
                 {
-                    Success = false,
-                    Message = $"Error deleting board resolution: {ex.Message}",
-                    Data = null
+                    success = false,
+                    message = ex.Message
                 });
             }
         }

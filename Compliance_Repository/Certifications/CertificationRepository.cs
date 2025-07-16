@@ -14,7 +14,7 @@ public class CertificationRepository : ICertificationRepository
 
     public CertificationRepository(IConfiguration config) => _conn = config.GetConnectionString("DefaultConnection");
 
-    public async Task<int> CreateAsync(CertificationDto dto, byte[]? attachedCertificate)
+    public async Task<int> CreateAsync(CreateCertificationsDto dto, byte[]? documentBytes, string created_by)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -30,16 +30,16 @@ public class CertificationRepository : ICertificationRepository
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@AttachedCertificate", attachedCertificate, DbType.Binary);
-        p.Add("@CreatedBy", dto.CreatedBy);
-        p.Add("@CreatedAt", dto.CreatedAt);
+        p.Add("@AttachedCertificate", documentBytes, DbType.Binary);
+        p.Add("@CreatedBy", created_by);
+        p.Add("@CreatedAt", DateTime.Now);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("sp_create_certification", p, commandType: CommandType.StoredProcedure);
         return p.Get<int>("@ReturnVal");
     }
 
-    public async Task<int> UpdateAsync(CertificationDto dto, byte[]? attachedCertificate)
+    public async Task<int> UpdateAsync(UpdateCertificationsDto dto, byte[]? documentBytes, string updatedBy)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -56,12 +56,12 @@ public class CertificationRepository : ICertificationRepository
         p.Add("@ReviewedDate", dto.ReviewedDate);
         p.Add("@ApprovedBy", dto.ApprovedBy);
         p.Add("@ApprovedDate", dto.ApprovedDate);
-        p.Add("@AttachedCertificate", attachedCertificate, DbType.Binary);
+        p.Add("@AttachedCertificate", documentBytes, DbType.Binary);
 
         // NOTE: Use UpdatedBy parameter (you may need to change your dto or pass separately)
-        p.Add("@UpdatedBy", dto.CreatedBy, DbType.String); // or pass UpdatedBy as a separate arg if different from CreatedBy
+        p.Add("@UpdatedBy", updatedBy); // or pass UpdatedBy as a separate arg if different from CreatedBy
 
-        p.Add("@UpdatedAt", DateTime.UtcNow, DbType.DateTime);
+        p.Add("@UpdatedAt", DateTime.Now);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("sp_update_certification", p, commandType: CommandType.StoredProcedure);
@@ -69,12 +69,12 @@ public class CertificationRepository : ICertificationRepository
     }
 
 
-    public async Task<int> DeleteAsync(int id, string createdBy)
+    public async Task<int> DeleteAsync(DeleteRequestDto dto, string updatedBy)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
-        p.Add("@Id", id);
-        p.Add("@CreatedBy", createdBy);
+        p.Add("@Id", dto.Id);
+        p.Add("@UpdatedBy", updatedBy);
         p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
         await db.ExecuteAsync("sp_delete_certification", p, commandType: CommandType.StoredProcedure);
@@ -88,7 +88,7 @@ public class CertificationRepository : ICertificationRepository
             "sp_get_certification_by_id", new { Id = id }, commandType: CommandType.StoredProcedure);
     }
 
-    public async Task<PagedResult<CertificationDto>> GetPagedAsync(string? search, bool? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
+    public async Task<PagedResult<CertificationDto>> GetPagedAsync(string? search, string? status, int page, int pageSize, DateTime? fromDate, DateTime? toDate)
     {
         using var db = new SqlConnection(_conn);
         var p = new DynamicParameters();
@@ -96,8 +96,8 @@ public class CertificationRepository : ICertificationRepository
         p.Add("@Status", status);
         p.Add("@Page", page);
         p.Add("@PageSize", pageSize);
-        p.Add("@FromDate", fromDate);
-        p.Add("@ToDate", toDate);
+        p.Add("@FromDate", fromDate?.Date);
+        p.Add("@ToDate", toDate?.Date);
 
         using var multi = await db.QueryMultipleAsync("sp_get_all_certifications", p, commandType: CommandType.StoredProcedure);
         var data = await multi.ReadAsync<CertificationDto>();

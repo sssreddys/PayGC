@@ -6,7 +6,6 @@ namespace Compliance_Dtos.Certifications
 {
     public class CertificationDto
     {
-        [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
         public int CertificationId { get; set; }
 
         [JsonConverter(typeof(JsonDateConverter))]
@@ -46,7 +45,7 @@ namespace Compliance_Dtos.Certifications
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime? UpdatedAt { get; set; }
 
-        public bool Status { get; set; }
+        public int Status { get; set; }
     }
 }
 
