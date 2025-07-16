@@ -23,7 +23,7 @@ namespace Compliance_Dtos.Common
         public string ApprovedBy { get; set; }
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime? ApprovedDate { get; set; }
-        public string Status { get; set; }
+        public int Status { get; set; }
         [JsonConverter(typeof(JsonDateConverter))]
         public DateTime CreatedAt { get; set; }
         [JsonConverter(typeof(JsonDateConverter))]

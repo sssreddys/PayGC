@@ -1,4 +1,5 @@
-﻿using Compliance_Dtos.Regulator;
+﻿using Compliance_Dtos.Agencies;
+using Compliance_Dtos.Regulator;
 using Compliance_Services.JWT;
 using Dapper;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -7,8 +8,6 @@ using Microsoft.OpenApi.Models;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Compliance_Dtos.Regulator;
-using Compliance_Dtos.Agencies;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -43,7 +42,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
                 var result = JsonSerializer.Serialize(new
                 {
-                    success=false,
+                    success = false,
                     message = "Unauthorized"
                 });
 
@@ -118,7 +117,7 @@ Compliance_Services.RegisterAllServices.RegisterTypes(builder.Services);
 Compliance_Repository.RegisterAllRepositories.RegisterTypes(builder.Services);
 // Add services to the container.
 
-
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
 

@@ -9,6 +9,9 @@ namespace Compliance_Services.User
         Task<UserProfileDto?> GetProfileAsync(string userId);
         Task<IEnumerable<UserProfileDto>> GetUsersAsync(GetUsersFilterDto filter);
         Task<string> UpdateUserAsync(string targetUserId, string updatedBy, UserUpdateDto dto);
+        Task<string> DeleteUserAsync(string targetUserId, string deletedBy);
+        Task<(bool Success, string Message)> ToggleUserStatusAsync(UserStatusDto dto, string performedByUserId);
+
 
     }
 

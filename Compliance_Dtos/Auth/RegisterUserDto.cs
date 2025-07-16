@@ -33,8 +33,7 @@ namespace Compliance_Dtos.Auth
         [MinLength(8)]
         public string PasswordHash { get; set; }
 
-        [Required]
-        public int RoleId { get; set; }
+        public int? RoleId { get; set; }
 
         [Required]
         [RegularExpression("^(MALE|FEMALE|OTHER)$", ErrorMessage = "Gender must be MALE, FEMALE, or OTHER")]

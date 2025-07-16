@@ -1,5 +1,7 @@
-﻿using Compliance_Dtos.Auth;
+﻿using Compliance_Common;
+using Compliance_Dtos.Auth;
 using Compliance_Repository.User;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Logging;
 
@@ -10,12 +12,14 @@ namespace Compliance_Services.User
         private readonly IUserRepository _repo;
         private readonly PasswordHasher<object> _hasher = new PasswordHasher<object>();
         private readonly ILogger<UserService> _logger;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         byte[]? profileImageBytes = null;
-        public UserService(IUserRepository repo, ILogger<UserService> logger)
+        public UserService(IUserRepository repo, ILogger<UserService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _repo = repo;
             _logger = logger;
+            _httpContextAccessor = httpContextAccessor;
         }
 
         public async Task<string> RegisterUserAsync(RegisterUserDto dto, string? addedBy)
@@ -115,34 +119,96 @@ namespace Compliance_Services.User
             {
                 _logger.LogInformation("Updating user {TargetUserId} by {UpdatedBy}", targetUserId, updatedBy);
 
-                // 🔐 Hash password if changed
+                // Step 1: Hash password if present
                 if (!string.IsNullOrWhiteSpace(dto.PasswordHash))
                 {
-                    dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash);
+                    dto.PasswordHash = _hasher.HashPassword(null, dto.PasswordHash.Trim());
                 }
 
-                // 🖼️ Convert image
-                byte[]? profileImageBytes = null;
+                // Step 2: Role-based restrictions if updating own profile
+                if (targetUserId == updatedBy)
+                {
+                    var roleClaim = _httpContextAccessor.HttpContext?.User?.FindFirst("role_id")?.Value;
+
+                    if (int.TryParse(roleClaim, out int currentRoleId))
+                    {
+                        bool isSuperAdmin = currentRoleId == (int)UserRole.SuperAdmin;
+                        bool isAdmin = currentRoleId == (int)UserRole.Admin;
+
+                        if (isAdmin)
+                        {
+                            if (dto.RoleId != null)
+                                throw new Exception("Admins cannot change their own role.");
+                            if (dto.Status != null)
+                                throw new Exception("Admins cannot change their own status.");
+                        }
+                        else if (!isSuperAdmin)
+                        {
+                            if (dto.RoleId != null || dto.Status != null)
+                                throw new Exception("You are not allowed to change role or status.");
+                        }
+                        // SuperAdmin: allowed to change anything
+                    }
+                    else
+                    {
+                        throw new Exception("Invalid role claim.");
+                    }
+                }
+
+                // Step 3: Profile image processing
+                byte[]? imageBytes = null;
                 if (dto.ProfileImage != null && dto.ProfileImage.Length > 0)
                 {
-                    if (dto.ProfileImage.Length > 500 * 1024)
-                        throw new Exception("Image size must not exceed 500 KB");
+                    const int MaxSizeBytes = 500 * 1024;
+                    if (dto.ProfileImage.Length > MaxSizeBytes)
+                        throw new Exception("Image size must not exceed 500 KB.");
 
                     using var ms = new MemoryStream();
                     await dto.ProfileImage.CopyToAsync(ms);
-                    profileImageBytes = ms.ToArray();
+                    imageBytes = ms.ToArray();
                 }
 
-                var result = await _repo.UpdateUserAsync(targetUserId, updatedBy, dto, profileImageBytes);
-
-                _logger.LogInformation("Update successful for user {TargetUserId}", targetUserId);
-                return result;
+                // Step 4: Repository call
+                return await _repo.UpdateUserAsync(targetUserId, updatedBy, dto, imageBytes);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Update failed for user {TargetUserId}", targetUserId);
+                _logger.LogError(ex, "Failed to update user {TargetUserId}", targetUserId);
                 throw;
             }
         }
+
+        public async Task<string> DeleteUserAsync(string targetUserId, string deletedBy)
+        {
+            var (success, message) = await _repo.DeleteUserAsync(targetUserId, deletedBy);
+
+            if (!success)
+                throw new ArgumentException(message ?? "Deletion failed.");
+
+            return message ?? "User deleted successfully.";
+        }
+
+
+
+        public async Task<(bool Success, string Message)> ToggleUserStatusAsync(UserStatusDto dto, string performedByUserId)
+        {
+            if (dto == null || string.IsNullOrWhiteSpace(dto.UserId))
+                return (false, "Invalid user data.");
+
+            try
+            {
+                return await _repo.ToggleUserStatusAsync(
+                    dto.UserId.Trim(),
+                    dto.Status,
+                    performedByUserId.Trim()
+                );
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ToggleUserStatusAsync.");
+                return (false, "An unexpected error occurred.");
+            }
+        }
+
     }
 }

@@ -1,4 +1,5 @@
-﻿using Compliance_Dtos.Auth;
+﻿using Compliance_Common;
+using Compliance_Dtos.Auth;
 using Compliance_Services.User;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -79,57 +80,155 @@ namespace PayGCompliance.Controllers.UserProfile
             }
         }
 
-
-
         [Authorize]
         [HttpPost("update")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateUser([FromForm] UserUpdateDto dto)
         {
             var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var roleId = User.FindFirst("role_id")?.Value;
+            var roleIdClaim = User.FindFirst("role_id")?.Value;
 
-            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleId))
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleIdClaim))
             {
                 return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
             }
 
-            bool isAdmin = roleId == ((int)UserRole.Admin).ToString() || roleId == ((int)UserRole.SuperAdmin).ToString();
-
-            string targetUserId;
-
-            if (!string.IsNullOrWhiteSpace(dto.UserId) && dto.UserId != tokenUserId)
+            if (!int.TryParse(roleIdClaim, out int tokenRoleId))
             {
-                if (!isAdmin)
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid role claim."));
+            }
+
+            bool isAdminOrSuperAdmin = tokenRoleId == (int)UserRole.Admin || tokenRoleId == (int)UserRole.SuperAdmin;
+
+            // Determine if target user is different than the current user
+            string targetUserId = dto.UserId?.Trim();
+
+            if (!string.IsNullOrEmpty(targetUserId) && targetUserId != tokenUserId)
+            {
+                if (!isAdminOrSuperAdmin)
                 {
                     return StatusCode(403, ApiResponse<object>.ErrorResponse("You are not authorized to update other users."));
                 }
-
-                // Admin or SuperAdmin updating someone else
-                targetUserId = dto.UserId!;
             }
             else
             {
-                // Self-update
+                // Self update
                 targetUserId = tokenUserId;
             }
 
             try
             {
-                var message = await _userService.UpdateUserAsync(tokenUserId, targetUserId, dto);
-                return Ok(ApiResponse<object>.SuccessResponse(new { message, user_id = targetUserId }, "User updated successfully."));
+                _logger.LogInformation("User update requested: Target={TargetUserId}, UpdatedBy={UpdatedBy}", targetUserId, tokenUserId);
+
+                var message = await _userService.UpdateUserAsync(targetUserId, tokenUserId, dto);
+
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    new { message, user_id = targetUserId },
+                    "User updated successfully."));
             }
             catch (SqlException sqlEx)
             {
-                _logger.LogError(sqlEx, "SQL error during profile update for user {UserId}", targetUserId);
-                return BadRequest(ApiResponse<object>.ErrorResponse($"Database error: {sqlEx.Message}"));
+                _logger.LogError(sqlEx, "SQL error while updating user {UserId}", targetUserId);
+                return BadRequest(ApiResponse<object>.ErrorResponse("Database error: " + sqlEx.Message));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Unexpected error during profile update for user {UserId}", targetUserId);
-                return StatusCode(500, ApiResponse<object>.ErrorResponse($"Update failed: {ex.Message}"));
+                _logger.LogError(ex, "Unexpected error while updating user {UserId}", targetUserId);
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Update failed: " + ex.Message));
             }
         }
+
+        [HttpDelete("delete")]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> DeleteUser([FromForm] DeleteUserDto dto)
+        {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleIdClaim = User.FindFirst("role_id")?.Value;
+
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleIdClaim))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
+
+            if (!int.TryParse(roleIdClaim, out int tokenRoleId))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid role claim."));
+
+            var isAdminOrSuperAdmin = tokenRoleId == (int)UserRole.Admin || tokenRoleId == (int)UserRole.SuperAdmin;
+            var targetUserId = dto.UserId?.Trim();
+
+            if (string.IsNullOrWhiteSpace(targetUserId))
+                return BadRequest(ApiResponse<object>.ErrorResponse("UserId is required for deletion."));
+
+            if (targetUserId != tokenUserId && !isAdminOrSuperAdmin)
+                return Forbid("You are not authorized to delete other users.");
+
+            try
+            {
+                _logger.LogInformation("Delete request: Target={TargetUserId}, By={DeletedBy}", targetUserId, tokenUserId);
+
+                string resultMessage = await _userService.DeleteUserAsync(targetUserId, tokenUserId);
+
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    new { user_id = targetUserId, message = resultMessage },
+                    "User deleted successfully."
+                ));
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "Validation failed during delete.");
+                return BadRequest(ApiResponse<object>.ErrorResponse(ex.Message));
+            }
+            catch (SqlException ex)
+            {
+                _logger.LogError(ex, "SQL error during delete.");
+                return BadRequest(ApiResponse<object>.ErrorResponse("Database error: " + ex.Message));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during delete.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Delete failed: " + ex.Message));
+            }
+        }
+
+
+        [HttpPost("toggle-status")]
+        public async Task<IActionResult> ToggleUserStatus([FromBody] UserStatusDto dto)
+        {
+            var tokenUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var roleIdClaim = User.FindFirst("role_id")?.Value;
+
+            if (string.IsNullOrWhiteSpace(tokenUserId) || string.IsNullOrWhiteSpace(roleIdClaim))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid token or missing claims."));
+
+            if (!int.TryParse(roleIdClaim, out int tokenRoleId))
+                return Unauthorized(ApiResponse<object>.ErrorResponse("Invalid role claim."));
+
+            if (string.IsNullOrWhiteSpace(dto?.UserId))
+                return BadRequest(ApiResponse<object>.ErrorResponse("Target user ID is required."));
+
+            if (dto.UserId == tokenUserId && dto.Status == 0)
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("You cannot deactivate yourself"));
+            try
+            {
+                _logger.LogInformation("Toggle status: Target={TargetUserId}, Status={Status}, PerformedBy={PerformedBy}",
+                    dto.UserId, dto.Status, tokenUserId);
+
+                var (success, message) = await _userService.ToggleUserStatusAsync(dto, tokenUserId);
+
+                if (!success)
+                    return Ok(ApiResponse<object>.ErrorResponse(message));
+
+                return Ok(ApiResponse<object>.SuccessResponse(
+                    new { user_id = dto.UserId, status = dto.Status },
+                    message
+                ));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Unexpected error during toggle status.");
+                return StatusCode(500, ApiResponse<object>.ErrorResponse("Operation failed: " + ex.Message));
+            }
+        }
+
+
 
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Compliance_Dtos.AuditedAndTemplate;
+using Compliance_Dtos.Common;
 using Compliance_Services.AuditedAndTemplate;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace PayGCompliance.Controllers
@@ -10,7 +12,7 @@ namespace PayGCompliance.Controllers
 
     [Authorize]
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/template")]
 
     public class TemplateController :ControllerBase
     {
@@ -52,7 +54,7 @@ namespace PayGCompliance.Controllers
                     documentBytes = ms.ToArray();
                 }
 
-                var created_by = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var id = await _service.CreateAsync(dto, documentBytes, this.controller_name, created_by!);
                 return Ok(new
                 {
@@ -71,7 +73,7 @@ namespace PayGCompliance.Controllers
         }
 
 
-        [HttpGet("audited-financialsPaged")]
+        [HttpGet("templates_paged")]
         public async Task<IActionResult> GetAuditedFinancialsAsync(
          [FromQuery(Name = "id")] int? auditedFinancialId,
          [FromQuery(Name = "search")] string? searchKeyword,
@@ -89,7 +91,11 @@ namespace PayGCompliance.Controllers
                 if (financialRecord == null)
                     return NotFound(new { message = "Record not found." });
 
-                return Ok(financialRecord);
+                return Ok(new
+                {
+                    success = true,
+                    data = financialRecord
+                });
             }
 
             // Else, return paginated and filtered results
@@ -115,7 +121,7 @@ namespace PayGCompliance.Controllers
             try
             {
                 byte[]? documentBytes = null;
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
@@ -147,7 +153,7 @@ namespace PayGCompliance.Controllers
         {
             try
             {
-                var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+                var updatedBy = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
