@@ -64,17 +64,18 @@ namespace PayGCompliance.Controllers.Certifications
                 var dto = await _service.GetByIdAsync(id);
                 if (dto == null)
                 {
-                    return NotFound(new ApiResponse<CertificationDto>
+                    return NotFound(new
                     {
                         Success = false,
                         Message = "Certification Not Found.",
                     });
                 }
 
-                return Ok(new ApiResponse<CertificationDto>
+                return Ok(new
                 {
                     Success = true,
                     Message = "Certification Found.",
+                    Data = dto
                 });
             }
             catch (Exception ex)
@@ -121,7 +122,7 @@ namespace PayGCompliance.Controllers.Certifications
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by!);
 
-                return Ok(new ApiResponse<int>
+                return Ok(new
                 {
                     Success = true,
                     Message = "Certification Created Successfully.",
@@ -159,7 +160,7 @@ namespace PayGCompliance.Controllers.Certifications
                 var updated = await _service.UpdateAsync(dto, documentBytes, updatedBy);
                 if (updated == -1) return NotFound();
 
-                return Ok(new ApiResponse<object>
+                return Ok(new
                 {
                     Success = true,
                     Message = "Certification updated successfully.",

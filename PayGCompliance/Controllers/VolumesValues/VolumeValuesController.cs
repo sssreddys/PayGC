@@ -70,7 +70,7 @@ namespace PayGCompliance.Controllers.VolumesValues
                 var data = await _service.GetByIdAsync(id);
                 if (data == null)
                 {
-                    return NotFound(new ApiResponse<VolumeValueDto>
+                    return NotFound(new
                     {
                         Success = false,
                         Message = "Volumes and Values not found.",
