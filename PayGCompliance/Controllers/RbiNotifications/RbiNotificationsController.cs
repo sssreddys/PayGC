@@ -4,6 +4,7 @@ using Compliance_Dtos.RbiNotifications;
 using Compliance_Dtos.Regulator;
 using Compliance_Services.RbiNotifications;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using PayGCompliance.Common;
 using System.Security.Claims;
@@ -119,14 +120,22 @@ namespace PayGCompliance.Controllers.RbiNotifications
                 var updatedBy = User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or User Id missing." });
-                var deleted = await _service.DeleteAsync(dto, updatedBy);
+                var result = await _service.DeleteAsync(dto, updatedBy);
 
-                if (deleted < 0)
+                if (result == -1)
                 {
                     return NotFound(new
                     {
                         success = false,
-                        message = "Record not found"
+                        message = "Record not found."
+                    });
+                }
+                else if (result == -2)
+                {
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Record already deleted."
                     });
                 }
                 else
@@ -134,7 +143,7 @@ namespace PayGCompliance.Controllers.RbiNotifications
                     return Ok(new
                     {
                         success = true,
-                        message = "Deleted successfully"
+                        message = "Deleted successfully."
                     });
                 }
             }

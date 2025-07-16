@@ -154,10 +154,10 @@ public class AuditedFinancialController : ControllerBase
             if (string.IsNullOrEmpty(updatedBy))
                 return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-            var deleted = await _service.DeleteAsync(dto, updatedBy, this.controller_name);
-           
+            var result = await _service.DeleteAsync(dto, updatedBy, this.controller_name);
 
-            if (deleted < 0)
+
+            if (result == -1)
             {
                 return NotFound(new
                 {
@@ -165,17 +165,24 @@ public class AuditedFinancialController : ControllerBase
                     message = "Record not found."
                 });
             }
+            else if (result == -2)
+            {
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Record already deleted."
+                });
+            }
             else
             {
                 return Ok(new
                 {
                     success = true,
-                    message = "Deleted successfully"
+                    message = "Deleted successfully."
                 });
-
             }
 
-               
+
         }
         catch (Exception ex)
         {
