@@ -10,6 +10,7 @@ namespace Compliance_Dtos.RbiNotifications
 {
     public class UpdateRbiNotificationDto
     {
+        [Required(ErrorMessage = "Id is required")]
         public int Id { get; set; }
         [Required(ErrorMessage = "Year is required")]
         public int Year { get; set; }

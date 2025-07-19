@@ -38,6 +38,7 @@ namespace Compliance_Repository.RbiNotifications
             p.Add("@ApprovedDate", dto.ApprovedDate);
             p.Add("@AttachedDocument", documentBytes, DbType.Binary);
             p.Add("@CreatedBy", created_by);
+            p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
 
             var result = await db.QueryFirstOrDefaultAsync<int>(
           "sp_add_rbi_notification",
@@ -111,9 +112,10 @@ namespace Compliance_Repository.RbiNotifications
             p.Add("@UpdatedAt", DateTime.Now);
             p.Add("@UpdatedBy", updatedBy);
             p.Add("@ReturnVal", dbType: DbType.Int32, direction: ParameterDirection.Output);
-            var result = await db.QueryFirstOrDefaultAsync<int>("sp_update_rbi_notification",p,commandType: CommandType.StoredProcedure);
+            await db.ExecuteAsync("sp_update_rbi_notification", p, commandType: CommandType.StoredProcedure);
 
-            return result;
+            // Read the output value
+            return p.Get<int>("@ReturnVal");
         }
 
     }
