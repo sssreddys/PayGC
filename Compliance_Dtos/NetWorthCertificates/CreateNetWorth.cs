@@ -13,8 +13,11 @@ namespace Compliance_Dtos.NetWorthCertificates
         [Required(ErrorMessage = "Net Worth Amount is required")]
         public decimal NetWorthAmount { get; set; }
 
+        
+
         [Required(ErrorMessage = "Basis of Calculation is required")]
-        public string BasisOfCalculation { get; set; }
+        [RegularExpression("^(Provisional|Actual)$", ErrorMessage = "Basis of Calculation must be either 'Provisional' or 'Actual'")]
+        public string? BasisOfCalculation { get; set; } 
 
     }
 }

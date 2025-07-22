@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Threading.Tasks;
-
 [Authorize]
 [ApiController]
 [Route("api/audited_financial")]
@@ -52,6 +51,14 @@ public class AuditedFinancialController : ControllerBase
             var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             var id = await _service.CreateAsync(dto,documentBytes, this.controller_name, created_by!);
+            if (id < 0)
+                return BadRequest(new
+                {
+                    success = false,
+                    message = "Error while creating Audited Financial."
+
+                });
+
             return Ok(new { 
                 success = true,
                 message = "Audited financial record created successfully."

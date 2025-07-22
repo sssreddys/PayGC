@@ -1,5 +1,6 @@
 ﻿using Compliance_Dtos.AuditedAndTemplate;
 using Compliance_Repository.Agencies;
+using Compliance_Repository.Dashboard;
 using Compliance_Repository.NetWorthCertificates;
 using Compliance_Repository.Policies;
 using Compliance_Repository.RbiNotifications;
@@ -28,6 +29,7 @@ namespace Compliance_Repository
             services.AddScoped< IAgenciesRepository,AgenciesRepository>();
             services.AddScoped<IPolicyRepository,PolicyRepository>();
             services.AddScoped<INetWorthRepository, NetWorthRepository>();
+            services.AddScoped<IDashboardRepository, DashboardRepository>();
 
         }
     }

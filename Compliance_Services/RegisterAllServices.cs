@@ -2,6 +2,7 @@
 using Compliance_Services.AuditedAndTemplate;
 using Compliance_Services.BoardResolution;
 using Compliance_Services.Certifications;
+using Compliance_Services.Dashboard;
 using Compliance_Services.JWT;
 using Compliance_Services.NetWorthCertificates;
 using Compliance_Services.Policies;
@@ -33,7 +34,8 @@ namespace Compliance_Services
             services.AddScoped<AgenciesService>();
             services.AddScoped<IPolicyService,PolicyService>();
             services.AddScoped<INetWorthService, NetWorthService>();
-            
+            services.AddScoped<IDashboardService, DashboardService>();
+
         }
     }
 

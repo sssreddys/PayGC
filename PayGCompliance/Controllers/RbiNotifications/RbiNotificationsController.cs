@@ -52,6 +52,14 @@ namespace PayGCompliance.Controllers.RbiNotifications
                 var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 var id = await _service.CreateAsync(dto, documentBytes, created_by);
+                if (id < 0)
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Error while creating RBI Notification."
+
+                    });
+
                 return Ok(new
                 {
                     success = true,

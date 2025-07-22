@@ -30,17 +30,17 @@ namespace Compliance_Dtos.Common
         public IFormFile? AttachedDocument { get; set; }
 
         [Required(ErrorMessage = "Audited By is required")]
-        [MaxLength(100)]
+        [MaxLength(20)]
         public string AuditedBy { get; set; }
 
         [Required(ErrorMessage = "Reviewed By is required")]
-        [MaxLength(100)]
+        [MaxLength(20)]
         public string ReviewedBy { get; set; }
 
         public DateTime? ReviewedDate { get; set; }
 
         [Required(ErrorMessage = "Approved By is required")]
-        [MaxLength(100)]
+        [MaxLength(20)]
         public string ApprovedBy { get; set; }
 
         public DateTime? ApprovedDate { get; set; }

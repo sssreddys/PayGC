@@ -27,14 +27,14 @@ public class CreateRbiNotificationDto
     public DateTime DeadlineDate { get; set; }
 
     [Required(ErrorMessage = "Reviewed By is required")]
-    [MaxLength(100)]
+    [MaxLength(20)]
     public string ReviewedBy { get; set; }
 
     [Required(ErrorMessage = "Reviewed Date is required")]
     public DateTime ReviewedDate { get; set; }
 
     [Required(ErrorMessage = "Approved By is required")]
-    [MaxLength(100)]
+    [MaxLength(20)]
     public string ApprovedBy { get; set; }
 
     [Required(ErrorMessage = "Approved Date is required")]

@@ -56,6 +56,13 @@ namespace PayGCompliance.Controllers
 
                 var created_by = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var id = await _service.CreateAsync(dto, documentBytes, this.controller_name, created_by!);
+                if (id < 0)
+                    return BadRequest(new
+                    {
+                        success = false,
+                        message = "Error while creating Template."
+
+                    });
                 return Ok(new
                 {
                     success = true,
@@ -125,11 +132,15 @@ namespace PayGCompliance.Controllers
                 if (string.IsNullOrEmpty(updatedBy))
                     return Unauthorized(new { message = "Invalid token or user ID missing" });
 
-                var hfc = HttpContext.Request.Form.Files;
-                var hpf = hfc[0];
-                MemoryStream memory = new();
-                hpf.CopyTo(memory);
-                documentBytes = memory.ToArray();
+
+                if (Request.Form.Files.Count > 0)
+                {
+                    var hpf = Request.Form.Files[0]; // safely get the uploaded file
+
+                    using var memory = new MemoryStream();
+                    hpf.CopyTo(memory);
+                    documentBytes = memory.ToArray();
+                }
                 var updated = await _service.UpdateAsync(documentBytes, dto, updatedBy, this.controller_name);
                 if (updated == -1) return NotFound();
                 return Ok(new
